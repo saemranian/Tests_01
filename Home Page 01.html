@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gallery-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            display: block; /* Ensures the anchor tag behaves like a block */
+        }
+        .gallery-card:hover {
+            transform: translateY(-10px);
+            z-index: 10;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        #video-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -100;
+            transform: translateX(-50%) translateY(-50%);
+            background-size: cover;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-gray-900">My Portfolio</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#home" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                        <a href="#portfolio" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Portfolio</a>
+                        <a href="#contact" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section with Video BG -->
+    <header id="home" class="relative overflow-hidden bg-gray-900">
+        <video playsinline autoplay muted loop id="video-bg">
+            <source src="Splat_Mix03_FHD_Compressed_01.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        
+        <div class="absolute inset-0 bg-black/50"></div>
+
+        <div class="relative z-10 max-w-6xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">Digital Experiences</h1>
+            <p class="mt-6 max-w-2xl mx-auto text-lg text-gray-300">
+                Exploring the intersection of art and technology.
+            </p>
+        </div>
+    </header>
+
+    <!-- Portfolio Section -->
+    <main id="portfolio">
+        <!-- Grid for Gallery Items -->
+        <div class="grid grid-cols-1 md:grid-cols-3">
+
+            <!-- Splat Gallery Card - LINK UPDATED -->
+            <a href="Splat Gallery.html" class="gallery-card bg-white overflow-hidden shadow-lg relative">
+                <img src="https://placehold.co/600x400/3498db/ffffff?text=Splat" 
+                     alt="Splat Gallery" 
+                     class="w-full h-48 object-cover"
+                     onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Splat Gallery</h3>
+                    <p class="mt-2 text-gray-600">A vibrant and dynamic exploration of abstract digital paint.</p>
+                </div>
+            </a>
+
+            <!-- XR Gallery Card - LINK UPDATED -->
+            <a href="XR Gallery.html" class="gallery-card bg-white overflow-hidden shadow-lg relative">
+                <img src="https://placehold.co/600x400/9b59b6/ffffff?text=XR" 
+                     alt="XR Gallery" 
+                     class="w-full h-48 object-cover"
+                     onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold text-gray-900">XR Gallery</h3>
+                    <p class="mt-2 text-gray-600">Immersive virtual and augmented reality art experiences.</p>
+                </div>
+            </a>
+
+            <!-- AI Gallery Card - LINK UPDATED -->
+            <a href="AI Gallery.html" class="gallery-card bg-white overflow-hidden shadow-lg relative">
+                <img src="https://placehold.co/600x400/e67e22/ffffff?text=AI" 
+                     alt="AI Gallery" 
+                     class="w-full h-48 object-cover"
+                     onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold text-gray-900">AI Gallery</h3>
+                    <p class="mt-2 text-gray-600">Art generated by creative artificial intelligence algorithms.</p>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-white border-t border-gray-200">
+        <div class="max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex flex-wrap justify-between items-center text-sm">
+            <div class="flex items-center space-x-4">
+                <p class="text-gray-600">Get in touch:</p>
+                <a href="mailto:hello@example.com" class="font-medium text-indigo-600 hover:text-indigo-500">hello@example.com</a>
+            </div>
+            <p class="text-gray-400 mt-2 sm:mt-0">&copy; 2025 My Portfolio. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
