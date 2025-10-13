@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XR Gallery - My Portfolio</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Added Font Awesome link for social icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -53,6 +55,14 @@
             color: #fff; /* White text for maximum visibility on dark gradient */
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8); /* Ensures title is readable over any video content */
         }
+        .social-link {
+             color: #4f46e5; /* Tailwind indigo-600 */
+             font-size: 1.25rem; /* text-xl */
+             transition: color 0.15s ease-in-out;
+        }
+        .social-link:hover {
+            color: #3730a3; /* darker indigo on hover */
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -62,12 +72,12 @@
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center">
-                    <!-- UPDATED: Make the Portfolio title link back to the Home Page -->
-                    <a href="Home Page.html" class="font-bold text-xl text-gray-900 hover:text-indigo-600 transition duration-150">XR Portfolio</a>
+                    <!-- Link back to Home Page -->
+                    <a href="Home Page.html" class="font-bold text-xl text-gray-900">XR Portfolio</a>
                 </div>
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
-                        <!-- ADDED: Dedicated Home Link for clear navigation -->
+                        <!-- Home Link -->
                         <a href="Home Page.html" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Home</a>
                         <a href="#portfolio" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Projects</a>
                         <a href="#contact" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Contact</a>
@@ -698,11 +708,16 @@
     <!-- Footer -->
     <footer id="contact" class="bg-gray-100 border-t border-gray-200 mt-12">
         <div class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-wrap justify-between items-center text-sm">
+            <!-- MODIFICATION: Updated Get in touch with social icons and new email -->
             <div class="flex items-center space-x-4">
                 <p class="text-gray-600">Get in touch:</p>
-                <a href="mailto:hello@example.com" class="font-medium text-indigo-600 hover:text-indigo-500">hello@example.com</a>
+                <a href="https://www.linkedin.com/in/ahmad-emranian/" target="_blank" class="social-link" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="https://www.youtube.com/@saemranian" target="_blank" class="social-link" title="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.instagram.com/saemranian/" target="_blank" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="mailto:saemranian@gmail.com" class="font-medium text-indigo-600 hover:text-indigo-500">saemranian@gmail.com</a>
             </div>
-            <p class="text-gray-400 mt-2 sm:mt-0">&copy; 2025 My Portfolio. All rights reserved.</p>
+            <!-- MODIFICATION: Updated Copyright Text -->
+            <p class="text-gray-400 mt-2 sm:mt-0">&copy; 2025 Ahmad Emranian Portfolio. All rights reserved.</p>
         </div>
     </footer>
 
