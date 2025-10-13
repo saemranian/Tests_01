@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XR Gallery - My Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Play Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Fixes for the edge-to-edge gallery style */
+        .gallery-container {
+            /* Removed mx-auto, padding, and fixed max-width for the gallery area to achieve edge-to-edge look */
+            width: 100%; 
+        }
+        .gallery-grid {
+            /* Removes the gap between columns/rows (md:grid-cols-3) */
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: 0; /* Important: removes space between grids */
+        }
+        @media (min-width: 768px) {
+            .gallery-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        /* Container for aspect ratio (Taller 4:3) */
+        .project-tile {
+            position: relative;
+            width: 100%;
+            padding-top: 133.33%; /* 4:3 Aspect Ratio (Height = 133.33% of Width) */
+            overflow: hidden;
+            background-color: #1f2937; 
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Optional: subtle dividers */
+        }
+        .project-tile:hover {
+             transform: none; /* Removed hover translate to keep tiles aligned */
+             box-shadow: none; /* Removed hover shadow */
+             z-index: 5; /* Brings the hovered tile to the front to show interaction */
+        }
+        /* Thumbnail/Placeholder Image (Can be replaced with real images) */
+        .project-tile img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .project-tile:hover img {
+            opacity: 0.9;
+        }
+        /* Play Button Overlay and Iframe Container */
+        .play-icon, .iframe-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 3rem;
+            z-index: 10;
+            opacity: 0.8;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .project-tile:hover .play-icon {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        /* Overlay for title - placed at the bottom */
+        .project-tile .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 20; 
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0) 100%);
+            padding: 1.5rem 1rem 0.75rem 1rem;
+            text-align: left;
+        }
+        .project-tile .title-text {
+            color: #fff; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Styles for the dynamically loaded iframe */
+        .project-tile iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="#" class="font-bold text-xl text-gray-900">XR Portfolio</a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#portfolio" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Projects</a>
+                        <a href="#contact" class="text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header id="portfolio" class="bg-gray-800 text-white shadow-lg">
+        <div class="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">Immersive XR Works Gallery</h1>
+            <p class="mt-2 text-gray-300 text-lg">A selection of my latest projects in Augmented Reality and Virtual Production.</p>
+        </div>
+    </header>
+
+    <!-- Projects Grid -->
+    <main class="gallery-container">
+        <div class="gallery-grid">
+
+            <!-- Project 1: Real-Time AR Broadcast Graphics -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7373927012198940672?compact=1" data-title="Real-Time AR Broadcast Graphics">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+1" alt="Thumbnail for Real-Time AR Broadcast Graphics">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Real-Time AR Broadcast Graphics</h3>
+                </div>
+            </div>
+
+            <!-- Project 2: Green Screen Virtual Studio -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7340626290883944448?compact=1" data-title="Green Screen Virtual Studio">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+2" alt="Thumbnail for Green Screen Virtual Studio">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Green Screen Virtual Studio</h3>
+                </div>
+            </div>
+
+            <!-- Project 3: 3DGS Photogrammetry in VFX -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7319297591920226304?compact=1" data-title="3DGS Photogrammetry in VFX">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+3" alt="Thumbnail for 3DGS Photogrammetry in VFX">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">3DGS Photogrammetry in VFX</h3>
+                </div>
+            </div>
+            
+            <!-- Project 4: Unreal Engine LED Stage Demo -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7301505070498484224?compact=1" data-title="Unreal Engine LED Stage Demo">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+4" alt="Thumbnail for Unreal Engine LED Stage Demo">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Unreal Engine LED Stage Demo</h3>
+                </div>
+            </div>
+
+            <!-- Project 5: Corporate Virtual Production -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7296810110658441216?compact=1" data-title="Corporate Virtual Production">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+5" alt="Thumbnail for Corporate Virtual Production">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Corporate Virtual Production</h3>
+                </div>
+            </div>
+
+            <!-- Project 6: Immersive Stage Lighting -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7283525389971316736?compact=1" data-title="Immersive Stage Lighting">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+6" alt="Thumbnail for Immersive Stage Lighting">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Immersive Stage Lighting</h3>
+                </div>
+            </div>
+            
+            <!-- Project 7: Mixed Reality Volumetric Capture -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7276213880844865537?compact=1" data-title="Mixed Reality Volumetric Capture">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+7" alt="Thumbnail for Mixed Reality Volumetric Capture">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Mixed Reality Volumetric Capture</h3>
+                </div>
+            </div>
+
+            <!-- Project 8: Live Event XR Integration -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7275184766994268160?compact=1" data-title="Live Event XR Integration">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+8" alt="Thumbnail for Live Event XR Integration">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Live Event XR Integration</h3>
+                </div>
+            </div>
+
+            <!-- Project 9: Interactive AR Experience -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7274505993768620034?compact=1" data-title="Interactive AR Experience">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+9" alt="Thumbnail for Interactive AR Experience">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Interactive AR Experience</h3>
+                </div>
+            </div>
+            
+            <!-- Project 10: Advanced Camera Tracking -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7261468024996564992?compact=1" data-title="Advanced Camera Tracking">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+10" alt="Thumbnail for Advanced Camera Tracking">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Advanced Camera Tracking</h3>
+                </div>
+            </div>
+
+            <!-- Project 11: AR Mobile App Preview -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7226075423376347136?compact=1" data-title="AR Mobile App Preview">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+11" alt="Thumbnail for AR Mobile App Preview">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">AR Mobile App Preview</h3>
+                </div>
+            </div>
+
+            <!-- Project 12: Virtual Art Gallery Walkthrough -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7210303343775125504?compact=1" data-title="Virtual Art Gallery Walkthrough">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+12" alt="Thumbnail for Virtual Art Gallery Walkthrough">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Virtual Art Gallery Walkthrough</h3>
+                </div>
+            </div>
+            
+            <!-- Project 13: High-Fidelity Virtual Set -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7204018777384972288?compact=1" data-title="High-Fidelity Virtual Set">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+13" alt="Thumbnail for High-Fidelity Virtual Set">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">High-Fidelity Virtual Set</h3>
+                </div>
+            </div>
+
+            <!-- Project 14: Cinematic XR Workflow -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7196084991657668608?compact=1" data-title="Cinematic XR Workflow">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+14" alt="Thumbnail for Cinematic XR Workflow">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Cinematic XR Workflow</h3>
+                </div>
+            </div>
+
+            <!-- Project 15: Studio Setup and Calibration -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7173511235559120896?compact=1" data-title="Studio Setup and Calibration">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+15" alt="Thumbnail for Studio Setup and Calibration">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Studio Setup and Calibration</h3>
+                </div>
+            </div>
+            
+            <!-- Project 16: Real-Time Compositing Demo -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7169676020197920768?compact=1" data-title="Real-Time Compositing Demo">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+16" alt="Thumbnail for Real-Time Compositing Demo">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Real-Time Compositing Demo</h3>
+                </div>
+            </div>
+
+            <!-- Project 17: Broadcast Design Mockup (1) -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7168914527349104641?compact=1" data-title="Broadcast Design Mockup (1)">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+17" alt="Thumbnail for Broadcast Design Mockup (1)">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Broadcast Design Mockup (1)</h3>
+                </div>
+            </div>
+
+            <!-- Project 18: AR Object Interaction Test -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7159539575139250176?compact=1" data-title="AR Object Interaction Test">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+18" alt="Thumbnail for AR Object Interaction Test">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">AR Object Interaction Test</h3>
+                </div>
+            </div>
+            
+            <!-- Project 19: Volumetric Video Editing -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7155230708897087488?compact=1" data-title="Volumetric Video Editing">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+19" alt="Thumbnail for Volumetric Video Editing">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Volumetric Video Editing</h3>
+                </div>
+            </div>
+
+            <!-- Project 20: Motion Capture for Avatars -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7151958687274692608?compact=1" data-title="Motion Capture for Avatars">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+20" alt="Thumbnail for Motion Capture for Avatars">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Motion Capture for Avatars</h3>
+                </div>
+            </div>
+
+            <!-- Project 21: Virtual Try-On Experience -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7147631544273203200?compact=1" data-title="Virtual Try-On Experience">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+21" alt="Thumbnail for Virtual Try-On Experience">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Virtual Try-On Experience</h3>
+                </div>
+            </div>
+
+            <!-- Project 22: Unreal Engine Training Session -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7141486991400927232?compact=1" data-title="Unreal Engine Training Session">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+22" alt="Thumbnail for Unreal Engine Training Session">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Unreal Engine Training Session</h3>
+                </div>
+            </div>
+
+            <!-- Project 23: Real-Time Visualizations -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7136326370900516864?compact=1" data-title="Real-Time Visualizations">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+23" alt="Thumbnail for Real-Time Visualizations">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Real-Time Visualizations</h3>
+                </div>
+            </div>
+
+            <!-- Project 24: Architectural Visualization XR -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7129613750956883968?compact=1" data-title="Architectural Visualization XR">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+24" alt="Thumbnail for Architectural Visualization XR">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Architectural Visualization XR</h3>
+                </div>
+            </div>
+
+            <!-- Project 25: AR Filter Design Showcase -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7126630229413928960?compact=1" data-title="AR Filter Design Showcase">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+25" alt="Thumbnail for AR Filter Design Showcase">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">AR Filter Design Showcase</h3>
+                </div>
+            </div>
+
+            <!-- Project 26: Mobile AR Tracking Test -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7116747652519596032?compact=1" data-title="Mobile AR Tracking Test">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+26" alt="Thumbnail for Mobile AR Tracking Test">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Mobile AR Tracking Test</h3>
+                </div>
+            </div>
+
+            <!-- Project 27: Holographic Display Demo -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7111193396819431424?compact=1" data-title="Holographic Display Demo">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+27" alt="Thumbnail for Holographic Display Demo">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Holographic Display Demo</h3>
+                </div>
+            </div>
+
+            <!-- Project 28: Depth Sensing and Mapping -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7106636619624947712?compact=1" data-title="Depth Sensing and Mapping">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+28" alt="Thumbnail for Depth Sensing and Mapping">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Depth Sensing and Mapping</h3>
+                </div>
+            </div>
+
+            <!-- Project 29: Multi-Camera VR Setup -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7100355584993943552?compact=1" data-title="Multi-Camera VR Setup">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+29" alt="Thumbnail for Multi-Camera VR Setup">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Multi-Camera VR Setup</h3>
+                </div>
+            </div>
+
+            <!-- Project 30: WebXR Interactive Content -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7088991241329111041?compact=1" data-title="WebXR Interactive Content">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+30" alt="Thumbnail for WebXR Interactive Content">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">WebXR Interactive Content</h3>
+                </div>
+            </div>
+
+            <!-- Project 31: Educational VR Simulation -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7087287169714655232?compact=1" data-title="Educational VR Simulation">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+31" alt="Thumbnail for Educational VR Simulation">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Educational VR Simulation</h3>
+                </div>
+            </div>
+
+            <!-- Project 32: Game Engine Integration -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7085316462134931458?compact=1" data-title="Game Engine Integration">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+32" alt="Thumbnail for Game Engine Integration">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Game Engine Integration</h3>
+                </div>
+            </div>
+
+            <!-- Project 33: Optimized Asset Pipeline -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7083488387692736512?compact=1" data-title="Optimized Asset Pipeline">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+33" alt="Thumbnail for Optimized Asset Pipeline">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Optimized Asset Pipeline</h3>
+                </div>
+            </div>
+
+            <!-- Project 34: Custom Shaders in XR -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7082217575333474304?compact=1" data-title="Custom Shaders in XR">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+34" alt="Thumbnail for Custom Shaders in XR">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Custom Shaders in XR</h3>
+                </div>
+            </div>
+
+            <!-- Project 35: AR Face Tracking Demo -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7081139893015330817?compact=1" data-title="AR Face Tracking Demo">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+35" alt="Thumbnail for AR Face Tracking Demo">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">AR Face Tracking Demo</h3>
+                </div>
+            </div>
+
+            <!-- Project 36: Volumetric Lighting Test -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7080191615251755008?compact=1" data-title="Volumetric Lighting Test">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+36" alt="Thumbnail for Volumetric Lighting Test">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Volumetric Lighting Test</h3>
+                </div>
+            </div>
+
+            <!-- Project 37: Stereoscopic 3D Rendering -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7079103375488745473?compact=1" data-title="Stereoscopic 3D Rendering">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+37" alt="Thumbnail for Stereoscopic 3D Rendering">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Stereoscopic 3D Rendering</h3>
+                </div>
+            </div>
+
+            <!-- Project 38: Performance Profiling XR -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7077257002007040000?compact=1" data-title="Performance Profiling XR">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+38" alt="Thumbnail for Performance Profiling XR">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Performance Profiling XR</h3>
+                </div>
+            </div>
+
+            <!-- Project 39: High-Res Environment Scan -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7074792352745189376?compact=1" data-title="High-Res Environment Scan">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+39" alt="Thumbnail for High-Res Environment Scan">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">High-Res Environment Scan</h3>
+                </div>
+            </div>
+
+            <!-- Project 40: AR Markerless Tracking -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7074242236477038593?compact=1" data-title="AR Markerless Tracking">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+40" alt="Thumbnail for AR Markerless Tracking">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">AR Markerless Tracking</h3>
+                </div>
+            </div>
+
+            <!-- Project 41: Physics Engine Demo -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7067138072102002688?compact=1" data-title="Physics Engine Demo">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+41" alt="Thumbnail for Physics Engine Demo">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Physics Engine Demo</h3>
+                </div>
+            </div>
+
+            <!-- Project 42: Procedural Content Generation -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7061543080864137216?compact=1" data-title="Procedural Content Generation">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+42" alt="Thumbnail for Procedural Content Generation">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Procedural Content Generation</h3>
+                </div>
+            </div>
+
+            <!-- Project 43: Early XR Development Demo -->
+            <div class="project-tile" data-embed-url="https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:7026112487909396482?compact=1" data-title="Early XR Development Demo">
+                <img src="https://placehold.co/800x1067/030712/ffffff?text=Project+43" alt="Thumbnail for Early XR Development Demo">
+                <i class="fas fa-play play-icon"></i>
+                <div class="overlay">
+                    <h3 class="title-text text-xl font-extrabold">Early XR Development Demo</h3>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-gray-100 border-t border-gray-200 mt-12">
+        <div class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-wrap justify-between items-center text-sm">
+            <div class="flex items-center space-x-4">
+                <p class="text-gray-600">Get in touch:</p>
+                <a href="mailto:hello@example.com" class="font-medium text-indigo-600 hover:text-indigo-500">hello@example.com</a>
+            </div>
+            <p class="text-gray-400 mt-2 sm:mt-0">&copy; 2025 My Portfolio. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const projectTiles = document.querySelectorAll('.project-tile');
+
+            projectTiles.forEach(tile => {
+                tile.addEventListener('click', function() {
+                    // Check if the iframe is already loaded
+                    if (this.querySelector('iframe')) {
+                        return; // Do nothing if the video is already playing
+                    }
+
+                    const embedUrl = this.dataset.embedUrl;
+                    const titleText = this.dataset.title;
+
+                    // 1. Hide the placeholder elements
+                    const img = this.querySelector('img');
+                    const playIcon = this.querySelector('.play-icon');
+                    const overlay = this.querySelector('.overlay');
+
+                    if (img) img.style.display = 'none';
+                    if (playIcon) playIcon.style.display = 'none';
+                    // We keep the overlay to show the title over the playing video
+                    if (overlay) overlay.style.zIndex = 30; // Bring title above the iframe
+
+                    // 2. Create the iframe element
+                    const iframe = document.createElement('iframe');
+                    iframe.src = embedUrl;
+                    iframe.setAttribute('loading', 'lazy');
+                    iframe.setAttribute('allowfullscreen', '');
+                    iframe.setAttribute('allow', 'autoplay; fullscreen');
+                    iframe.title = titleText;
+                    
+                    // 3. Append the iframe to the tile
+                    this.appendChild(iframe);
+                    
+                    // Optional: Remove hover effects after video starts playing
+                    this.classList.add('playing');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
