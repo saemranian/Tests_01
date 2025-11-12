@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secured Showcase</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for a clean look */
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Password Protection Overlay -->
+    <div id="login-screen" class="fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50 transition-opacity duration-500">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm transform transition-transform duration-500 scale-100">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 text-center">Access Restricted</h2>
+            <p class="text-gray-600 mb-6 text-center">Enter the password to view the protected content.</p>
+
+            <div class="space-y-4">
+                <input type="password" id="password-input" placeholder="Enter Password"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 text-center">
+
+                <button id="submit-button" onclick="checkPassword()"
+                        class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 shadow-md">
+                    Unlock Content
+                </button>
+                <p id="error-message" class="text-red-500 text-sm text-center font-medium opacity-0 transition-opacity duration-300">
+                    Incorrect password. Please try again.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Protected Content Area (Hidden until unlocked) -->
+    <div id="showcase-content" class="w-full max-w-6xl opacity-0 transition-opacity duration-500" style="visibility: hidden;">
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h1 class="text-3xl font-extrabold text-gray-800 mb-6 border-b pb-3">TempShowcase: Office_01</h1>
+            
+            <!-- User's Embed Code -->
+            <iframe
+                width="100%"
+                height="600px"
+                src="https://story.cyango.com/6914650c03e43d1d3e782915"
+                title="Office_01"
+                allow="accelerometer; autoplay; encrypted-media; gyroscope;"
+                allowfullscreen="true"
+                frameborder="0"
+                class="rounded-xl shadow-inner"
+            ></iframe>
+        </div>
+    </div>
+
+    <script>
+        const CORRECT_PASSWORD = "123456";
+        const passwordInput = document.getElementById('password-input');
+        const errorMessage = document.getElementById('error-message');
+        const loginScreen = document.getElementById('login-screen');
+        const showcaseContent = document.getElementById('showcase-content');
+
+        function checkPassword() {
+            const enteredPassword = passwordInput.value;
+            errorMessage.classList.remove('opacity-100');
+            errorMessage.classList.add('opacity-0');
+
+            if (enteredPassword === CORRECT_PASSWORD) {
+                // Success: Fade out login screen and show content
+                loginScreen.style.opacity = '0';
+                showcaseContent.style.visibility = 'visible';
+                
+                // Wait for fade out, then remove login screen from flow
+                setTimeout(() => {
+                    loginScreen.style.display = 'none';
+                    showcaseContent.style.opacity = '1';
+                }, 500);
+            } else {
+                // Failure: Show error message
+                errorMessage.classList.add('opacity-100');
+                passwordInput.value = ''; // Clear input field
+                passwordInput.focus();
+            }
+        }
+
+        // Allow pressing Enter key to submit
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        // Focus on the input field when the page loads
+        window.onload = () => {
+            passwordInput.focus();
+        };
+    </script>
+</body>
+</html>
