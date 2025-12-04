@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATM – Intelligent Transport Systems</title>
+    <meta name="description" content="Leading system integrator in smart mobility and payment solutions across Europe and MENA.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts (Modern Sans) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            cursor: none; /* Hide default cursor for custom one */
+        }
+        
+        /* Custom Cursor */
+        .cursor-dot,
+        .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #0d9488; /* Teal-600 */
+        }
+
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(13, 148, 136, 0.5);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+
+        /* Hover state for cursor */
+        body.hovering .cursor-outline {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(13, 148, 136, 0.1);
+            border-color: transparent;
+        }
+
+        /* Gradient Text */
+        .text-gradient {
+            background: linear-gradient(90deg, #0f766e 0%, #0e7490 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Backgrounds */
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        
+        .bg-gradient-accent {
+            background: linear-gradient(90deg, #0f766e 0%, #0e7490 100%);
+        }
+
+        /* Animation Classes */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s cubic-bezier(0.5, 0, 0, 1);
+        }
+        
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: all 1s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 1s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .reveal-left.active, .reveal-right.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Staggered Children Delay */
+        .stagger-delay-1 { transition-delay: 100ms; }
+        .stagger-delay-2 { transition-delay: 200ms; }
+        .stagger-delay-3 { transition-delay: 300ms; }
+        .stagger-delay-4 { transition-delay: 400ms; }
+
+        /* Canvas Background */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* 3D Tilt Container */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Traffic Line Animation */
+        .traffic-line-container {
+            position: relative;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        .traffic-car {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 100%;
+            background: #2dd4bf;
+            box-shadow: 0 0 10px #2dd4bf;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased overflow-x-hidden selection:bg-teal-200 selection:text-teal-900">
+
+    <!-- Custom Cursor Elements -->
+    <div class="cursor-dot hidden md:block"></div>
+    <div class="cursor-outline hidden md:block"></div>
+
+    <!-- Background Particle Canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Navigation -->
+    <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 bg-white/80 backdrop-blur-md border-b border-transparent">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer hover-trigger" onclick="window.scrollTo(0,0)">
+                    <div class="w-10 h-10 bg-gradient-accent rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg transform transition hover:rotate-12">
+                        A
+                    </div>
+                    <span class="font-bold text-2xl tracking-tighter text-slate-900">ATM <span class="text-teal-600 font-light">ITS</span></span>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="#about" class="text-slate-600 hover:text-teal-600 font-medium transition hover-trigger relative group">
+                        About Us
+                        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-600 transition-all group-hover:w-full"></span>
+                    </a>
+                    <a href="#services" class="text-slate-600 hover:text-teal-600 font-medium transition hover-trigger relative group">
+                        Services
+                        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-600 transition-all group-hover:w-full"></span>
+                    </a>
+                    <a href="#solutions" class="text-slate-600 hover:text-teal-600 font-medium transition hover-trigger relative group">
+                        Solutions
+                        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-600 transition-all group-hover:w-full"></span>
+                    </a>
+                    <a href="#partners" class="text-slate-600 hover:text-teal-600 font-medium transition hover-trigger relative group">
+                        Partners
+                        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-600 transition-all group-hover:w-full"></span>
+                    </a>
+                    <a href="#contact" class="px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium hover:bg-teal-700 transition shadow-lg transform hover:-translate-y-0.5 hover-trigger">Contact Us</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-slate-900 hover:text-teal-600 focus:outline-none hover-trigger">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 absolute w-full shadow-2xl">
+            <div class="px-4 pt-2 pb-6 space-y-1">
+                <a href="#about" class="block px-3 py-3 text-base font-medium text-slate-700 hover:text-teal-600 hover:bg-slate-50 rounded-md">About Us</a>
+                <a href="#services" class="block px-3 py-3 text-base font-medium text-slate-700 hover:text-teal-600 hover:bg-slate-50 rounded-md">Services</a>
+                <a href="#solutions" class="block px-3 py-3 text-base font-medium text-slate-700 hover:text-teal-600 hover:bg-slate-50 rounded-md">Solutions</a>
+                <a href="#partners" class="block px-3 py-3 text-base font-medium text-slate-700 hover:text-teal-600 hover:bg-slate-50 rounded-md">Partners</a>
+                <a href="#contact" class="block px-3 py-3 text-base font-medium text-teal-600 font-bold hover:bg-slate-50 rounded-md">Contact Us</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section with 3D Tilt -->
+    <header id="home" class="relative h-screen min-h-[700px] flex items-center justify-center overflow-hidden" onmousemove="handleTilt(event)">
+        <!-- Video Background Placeholder -->
+        <div class="absolute inset-0 w-full h-full z-0 bg-slate-900">
+             <!-- Replace this div with your <video> tag -->
+             <!-- <video autoplay muted loop class="object-cover w-full h-full opacity-40 mix-blend-overlay"><source src="your-video.mp4"></video> -->
+             
+             <!-- Mesh Gradient Background for modern look -->
+             <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-950 to-black opacity-80"></div>
+             
+             <!-- Animated Grid Lines (CSS only for perf) -->
+             <div class="absolute inset-0 opacity-20" style="background-image: linear-gradient(#14b8a6 1px, transparent 1px), linear-gradient(90deg, #14b8a6 1px, transparent 1px); background-size: 50px 50px; transform: perspective(500px) rotateX(60deg) translateY(-100px) scale(2);"></div>
+        </div>
+
+        <!-- Content with Tilt Effect -->
+        <div id="hero-content" class="relative z-10 text-center px-4 max-w-5xl mx-auto tilt-card">
+            <div class="reveal active inline-block px-4 py-1.5 mb-6 rounded-full bg-teal-500/10 border border-teal-500/30 backdrop-blur-md shadow-[0_0_15px_rgba(20,184,166,0.2)]">
+                <span class="text-teal-300 font-semibold text-sm tracking-wide uppercase flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span> Smart Mobility Integrator
+                </span>
+            </div>
+            
+            <h1 class="reveal active text-5xl md:text-8xl font-bold text-white mb-8 leading-tight tracking-tight drop-shadow-xl" style="transition-delay: 100ms;">
+                Driving the <br> 
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-300 to-teal-200">Transformation</span> 
+            </h1>
+            
+            <p class="reveal active text-lg md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto font-light leading-relaxed" style="transition-delay: 200ms;">
+                Delivering advanced ITS and payment solutions across Europe and the MENA region. Innovative, tailor-made, and future-ready.
+            </p>
+            
+            <div class="reveal active flex flex-col sm:flex-row gap-5 justify-center" style="transition-delay: 300ms;">
+                <a href="#services" class="group hover-trigger relative px-8 py-4 rounded-full bg-teal-600 text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(20,184,166,0.4)]">
+                    <span class="relative z-10">Explore Solutions</span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-teal-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </a>
+                <a href="#contact" class="hover-trigger px-8 py-4 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white font-bold text-lg hover:bg-white/10 transition hover:border-white/30">
+                    Contact Us
+                </a>
+            </div>
+        </div>
+        
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer hover-trigger">
+            <a href="#about" class="text-white/30 hover:text-teal-400 transition duration-300">
+                <i class="fas fa-chevron-down text-3xl"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <section id="about" class="py-32 bg-white relative overflow-hidden">
+        <!-- Decoration -->
+        <div class="absolute top-20 -left-20 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div class="absolute top-40 -right-20 w-96 h-96 bg-cyan-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-20 items-center">
+                <div class="reveal-left">
+                    <h2 class="text-teal-600 font-bold tracking-widest uppercase mb-4 text-sm">About Us</h2>
+                    <h3 class="text-4xl md:text-6xl font-bold text-slate-900 mb-8 leading-tight">Our Story & <br>Legacy</h3>
+                    <div class="space-y-6 text-lg text-slate-600 leading-relaxed">
+                        <p>
+                            <span class="font-bold text-slate-900 border-b-2 border-teal-200">ATM – Intelligent Transport Systems</span> is a leading system integrator in smart mobility. We don't just follow trends; we set the pace for the future of transport.
+                        </p>
+                        <p>
+                            With over <span class="text-teal-600 font-bold">45 years in France</span> and <span class="text-teal-600 font-bold">15 years in the UAE</span>, ATM drives the transformation of public transport through fully integrated mobility solutions.
+                        </p>
+                        
+                        <!-- Mini Stats -->
+                        <div class="grid grid-cols-3 gap-4 pt-4">
+                            <div class="text-center p-4 bg-slate-50 rounded-xl hover:bg-teal-50 transition duration-300 hover-trigger">
+                                <span class="block text-3xl font-bold text-slate-900">2012</span>
+                                <span class="text-xs text-slate-500 uppercase font-semibold">Est. in UAE</span>
+                            </div>
+                            <div class="text-center p-4 bg-slate-50 rounded-xl hover:bg-teal-50 transition duration-300 hover-trigger">
+                                <span class="block text-3xl font-bold text-slate-900">50+</span>
+                                <span class="text-xs text-slate-500 uppercase font-semibold">Engineers</span>
+                            </div>
+                            <div class="text-center p-4 bg-slate-50 rounded-xl hover:bg-teal-50 transition duration-300 hover-trigger">
+                                <span class="block text-3xl font-bold text-slate-900">GCC</span>
+                                <span class="text-xs text-slate-500 uppercase font-semibold">Coverage</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Interactive Image Card -->
+                <div class="reveal-right relative h-[500px] w-full group perspective-1000">
+                    <div class="relative w-full h-full transition-transform duration-700 preserve-3d group-hover:rotate-y-2">
+                        <!-- Image -->
+                        <div class="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl">
+                             <!-- Replace with <img src="..." class="w-full h-full object-cover transform transition duration-1000 group-hover:scale-110"> -->
+                            <div class="w-full h-full bg-slate-800 flex items-center justify-center relative">
+                                <div class="absolute inset-0 bg-gradient-to-tr from-teal-900/50 to-transparent"></div>
+                                <span class="text-slate-500 font-bold text-xl z-10"><i class="fas fa-building mr-2"></i> HQ & Operations</span>
+                                <!-- Abstract lines -->
+                                <div class="absolute bottom-0 left-0 w-full h-1 bg-teal-500"></div>
+                                <div class="absolute bottom-4 left-0 w-2/3 h-1 bg-teal-600 opacity-50"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Floating Badge -->
+                        <div class="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl border-l-4 border-teal-500 transform transition duration-500 hover:translate-y-2">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
+                                    <i class="fas fa-award text-2xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-slate-900">Leader</p>
+                                    <p class="text-sm font-semibold text-slate-500">In Smart Mobility</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-32 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-20 reveal">
+                <h2 class="text-teal-600 font-bold tracking-widest uppercase mb-2 text-sm">Our Expertise</h2>
+                <h3 class="text-4xl font-bold text-slate-900">End-to-End ITS Integration</h3>
+                <div class="w-20 h-1 bg-teal-500 mx-auto mt-6 rounded-full"></div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Service Card 1 -->
+                <div class="reveal hover-trigger bg-white rounded-2xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 group border border-slate-100 hover:border-teal-500/30 relative overflow-hidden stagger-delay-1">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-16 -mt-16 transition-all group-hover:scale-150 group-hover:bg-teal-100/50"></div>
+                    
+                    <div class="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-8 text-teal-600 shadow-sm relative z-10 group-hover:bg-teal-600 group-hover:text-white transition-colors duration-300">
+                        <i class="fas fa-cogs text-2xl"></i>
+                    </div>
+                    
+                    <h4 class="text-2xl font-bold text-slate-900 mb-4 group-hover:text-teal-700 transition">System Integration</h4>
+                    <p class="text-slate-600 leading-relaxed mb-6">
+                        We excel in integrating complex ITS solutions into existing public transport infrastructures. From design specifications to commissioning.
+                    </p>
+                    <a href="#contact" class="inline-flex items-center text-teal-600 font-bold text-sm tracking-wide group-hover:translate-x-2 transition-transform">
+                        READ MORE <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+
+                <!-- Service Card 2 -->
+                <div class="reveal hover-trigger bg-white rounded-2xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 group border border-slate-100 hover:border-cyan-500/30 relative overflow-hidden stagger-delay-2">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-50 rounded-bl-full -mr-16 -mt-16 transition-all group-hover:scale-150 group-hover:bg-cyan-100/50"></div>
+                    
+                    <div class="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-8 text-cyan-600 shadow-sm relative z-10 group-hover:bg-cyan-600 group-hover:text-white transition-colors duration-300">
+                        <i class="fas fa-tools text-2xl"></i>
+                    </div>
+                    
+                    <h4 class="text-2xl font-bold text-slate-900 mb-4 group-hover:text-cyan-700 transition">Proactive Maintenance</h4>
+                    <p class="text-slate-600 leading-relaxed mb-6">
+                        Successful ITS deployment requires continuous support. We provide effective deployment and proactive maintenance to ensure full benefits.
+                    </p>
+                    <a href="#contact" class="inline-flex items-center text-cyan-600 font-bold text-sm tracking-wide group-hover:translate-x-2 transition-transform">
+                        READ MORE <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+
+                <!-- Service Card 3 -->
+                <div class="reveal hover-trigger bg-white rounded-2xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 group border border-slate-100 hover:border-blue-500/30 relative overflow-hidden stagger-delay-3">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-16 -mt-16 transition-all group-hover:scale-150 group-hover:bg-blue-100/50"></div>
+                    
+                    <div class="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-8 text-blue-600 shadow-sm relative z-10 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                        <i class="fas fa-chart-line text-2xl"></i>
+                    </div>
+                    
+                    <h4 class="text-2xl font-bold text-slate-900 mb-4 group-hover:text-blue-700 transition">Strategic Optimisation</h4>
+                    <p class="text-slate-600 leading-relaxed mb-6">
+                        Our dynamic agility allows us to adapt to rapid technological changes, focusing on continuous system management and optimization.
+                    </p>
+                    <a href="#contact" class="inline-flex items-center text-blue-600 font-bold text-sm tracking-wide group-hover:translate-x-2 transition-transform">
+                        READ MORE <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solutions / "Traffic Flow" Animation Section -->
+    <section id="solutions" class="py-32 bg-slate-900 relative overflow-hidden">
+        <!-- Scroll-linked Traffic Animation -->
+        <div class="absolute top-1/2 left-0 w-full transform -translate-y-1/2 opacity-20 pointer-events-none">
+             <!-- The car position is updated via JS based on scroll -->
+             <div class="traffic-line-container">
+                 <div class="traffic-car" id="traffic-car"></div>
+             </div>
+             <div class="traffic-line-container" style="width: 80%; margin-top: 40px; margin-left: 10%">
+                <div class="traffic-car" id="traffic-car-2" style="background: #06b6d4; box-shadow: 0 0 10px #06b6d4;"></div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-center gap-16">
+            <div class="md:w-1/2 reveal-left">
+                <div class="inline-block px-3 py-1 bg-cyan-900/50 border border-cyan-500/30 text-cyan-400 text-xs font-bold uppercase rounded mb-4">Innovation Lab</div>
+                <h2 class="text-5xl font-bold text-white mb-6">Future-Ready <br> <span class="text-teal-400">Mobility</span></h2>
+                <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                    We understand that technology is only as good as its implementation. Our solutions bridge the gap between complex engineering and user-friendly public transport experiences.
+                </p>
+                
+                <ul class="space-y-4 mb-10">
+                    <li class="flex items-center text-slate-300">
+                        <span class="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center mr-4 text-teal-400 font-bold text-sm">01</span>
+                        <span>Advanced Traffic Management Systems</span>
+                    </li>
+                    <li class="flex items-center text-slate-300">
+                        <span class="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center mr-4 text-teal-400 font-bold text-sm">02</span>
+                        <span>Integrated Payment Gateways</span>
+                    </li>
+                    <li class="flex items-center text-slate-300">
+                        <span class="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center mr-4 text-teal-400 font-bold text-sm">03</span>
+                        <span>Real-time Data Analytics</span>
+                    </li>
+                </ul>
+
+                <button class="hover-trigger px-8 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-bold rounded-lg shadow-[0_0_20px_rgba(20,184,166,0.4)] hover:shadow-[0_0_30px_rgba(20,184,166,0.6)] transition-all transform hover:-translate-y-1">
+                    Request Demo
+                </button>
+            </div>
+            
+            <div class="md:w-1/2 w-full reveal-right">
+                <!-- Video/Solution Placeholder -->
+                <div class="aspect-video bg-slate-800 rounded-xl shadow-2xl border border-slate-700 flex items-center justify-center relative group overflow-hidden cursor-pointer hover-trigger">
+                    <!-- Placeholder Animated Background -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900">
+                         <!-- Moving Grid -->
+                         <div class="absolute inset-0 opacity-20" style="background-image: linear-gradient(0deg, transparent 24%, rgba(45, 212, 191, .3) 25%, rgba(45, 212, 191, .3) 26%, transparent 27%, transparent 74%, rgba(45, 212, 191, .3) 75%, rgba(45, 212, 191, .3) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(45, 212, 191, .3) 25%, rgba(45, 212, 191, .3) 26%, transparent 27%, transparent 74%, rgba(45, 212, 191, .3) 75%, rgba(45, 212, 191, .3) 76%, transparent 77%, transparent); background-size: 50px 50px;"></div>
+                    </div>
+
+                    <div class="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center pl-1 group-hover:scale-110 transition duration-300 border border-white/20 z-10 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                        <i class="fas fa-play text-white text-3xl"></i>
+                    </div>
+                    <p class="absolute bottom-6 text-white font-medium tracking-wider z-10 uppercase text-sm">Watch Solution Demo</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partners -->
+    <section id="partners" class="py-20 bg-white border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 text-center reveal">
+            <h3 class="text-xl font-bold text-slate-500 uppercase tracking-widest mb-12">Trusted By Industry Leaders</h3>
+            
+            <div class="flex flex-wrap justify-center gap-12 md:gap-20 opacity-70">
+                <!-- Logos with hover effect -->
+                <div class="group hover-trigger">
+                    <div class="h-12 w-32 bg-slate-200 rounded flex items-center justify-center text-slate-400 font-bold italic group-hover:bg-teal-50 group-hover:text-teal-600 transition-all duration-300 transform group-hover:scale-110">LOGO 01</div>
+                </div>
+                <div class="group hover-trigger">
+                    <div class="h-12 w-32 bg-slate-200 rounded flex items-center justify-center text-slate-400 font-bold italic group-hover:bg-teal-50 group-hover:text-teal-600 transition-all duration-300 transform group-hover:scale-110">LOGO 02</div>
+                </div>
+                <div class="group hover-trigger">
+                    <div class="h-12 w-32 bg-slate-200 rounded flex items-center justify-center text-slate-400 font-bold italic group-hover:bg-teal-50 group-hover:text-teal-600 transition-all duration-300 transform group-hover:scale-110">LOGO 03</div>
+                </div>
+                <div class="group hover-trigger">
+                    <div class="h-12 w-32 bg-slate-200 rounded flex items-center justify-center text-slate-400 font-bold italic group-hover:bg-teal-50 group-hover:text-teal-600 transition-all duration-300 transform group-hover:scale-110">LOGO 04</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-32 bg-gradient-primary text-white relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid md:grid-cols-2 gap-16 reveal">
+                
+                <!-- Contact Info -->
+                <div>
+                    <h2 class="text-teal-400 font-bold tracking-widest uppercase mb-2 text-sm">Contact Us</h2>
+                    <h3 class="text-5xl font-bold mb-8">Let's Build the <br>Future Together</h3>
+                    <p class="text-slate-400 mb-12 leading-relaxed text-lg">
+                        Our team is ready to assist you with tailored ITS solutions. Reach out to discuss your infrastructure needs.
+                    </p>
+
+                    <div class="space-y-8">
+                        <div class="flex items-start group hover-trigger">
+                            <div class="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center flex-shrink-0 text-teal-400 border border-slate-700 group-hover:border-teal-500 transition-colors">
+                                <i class="fas fa-map-marker-alt text-2xl"></i>
+                            </div>
+                            <div class="ml-6">
+                                <h4 class="font-bold text-xl mb-1 text-white group-hover:text-teal-300 transition">UAE Offices</h4>
+                                <p class="text-slate-400">Abu Dhabi & Dubai, United Arab Emirates</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start group hover-trigger">
+                            <div class="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center flex-shrink-0 text-teal-400 border border-slate-700 group-hover:border-teal-500 transition-colors">
+                                <i class="fas fa-envelope text-2xl"></i>
+                            </div>
+                            <div class="ml-6">
+                                <h4 class="font-bold text-xl mb-1 text-white group-hover:text-teal-300 transition">Email Us</h4>
+                                <p class="text-slate-400">info@atm-its.com</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="bg-white/5 backdrop-blur-lg p-10 rounded-3xl border border-white/10 shadow-2xl">
+                    <form action="#" method="POST" class="space-y-6">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-400 mb-2">First Name</label>
+                                <input type="text" class="hover-trigger w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-teal-500 focus:bg-slate-800 transition" placeholder="John">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-400 mb-2">Last Name</label>
+                                <input type="text" class="hover-trigger w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-teal-500 focus:bg-slate-800 transition" placeholder="Doe">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
+                            <input type="email" class="hover-trigger w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-teal-500 focus:bg-slate-800 transition" placeholder="john@company.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-2">Message</label>
+                            <textarea rows="4" class="hover-trigger w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-teal-500 focus:bg-slate-800 transition" placeholder="Tell us about your project..."></textarea>
+                        </div>
+                        <button type="button" class="hover-trigger w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-bold py-5 rounded-xl transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-teal-900/50">
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-900">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-center md:text-left">
+                <span class="font-bold text-2xl tracking-tighter text-white block">ATM <span class="text-teal-600 font-light">ITS</span></span>
+                <p class="text-sm mt-2">© ATM Internationale | All Rights Reserved – 2025</p>
+            </div>
+            <div class="flex space-x-6">
+                <a href="#" class="hover-trigger hover:text-teal-500 transition hover:scale-125 transform block"><i class="fab fa-linkedin-in text-2xl"></i></a>
+                <a href="#" class="hover-trigger hover:text-teal-500 transition hover:scale-125 transform block"><i class="fab fa-twitter text-2xl"></i></a>
+                <a href="#" class="hover-trigger hover:text-teal-500 transition hover:scale-125 transform block"><i class="fab fa-instagram text-2xl"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // --- 1. Custom Cursor Logic ---
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+        const hoverTriggers = document.querySelectorAll('.hover-trigger');
+
+        window.addEventListener('mousemove', (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+
+            // Dot follows instantly
+            cursorDot.style.left = `${posX}px`;
+            cursorDot.style.top = `${posY}px`;
+
+            // Outline follows with slight delay (animation in CSS usually handles smoother, but JS set position)
+            cursorOutline.animate({
+                left: `${posX}px`,
+                top: `${posY}px`
+            }, { duration: 500, fill: "forwards" });
+        });
+
+        // Add hover effect for interactive elements
+        hoverTriggers.forEach(trigger => {
+            trigger.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            trigger.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+
+        // --- 2. Canvas Particle Network (The "ITS Network") ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            initParticles();
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5; // Slow movement
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Bounce off edges
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+
+                // Mouse interaction (move away from mouse)
+                const dx = this.x - mouse.x;
+                const dy = this.y - mouse.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                
+                if (distance < 150) {
+                    const forceDirectionX = dx / distance;
+                    const forceDirectionY = dy / distance;
+                    const force = (150 - distance) / 150;
+                    this.vx += forceDirectionX * force * 0.5;
+                    this.vy += forceDirectionY * force * 0.5;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(13, 148, 136, 0.3)'; // Teal color
+                ctx.fill();
+            }
+        }
+
+        let mouse = { x: null, y: null };
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        function initParticles() {
+            particles = [];
+            const numParticles = Math.floor(width / 10); // Responsive count
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                // Draw connections
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(13, 148, 136, ${0.1 - distance/1000})`;
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        animateParticles();
+
+
+        // --- 3. Scroll Reveal Animation ---
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => {
+            observer.observe(el);
+        });
+
+
+        // --- 4. 3D Tilt Effect for Hero ---
+        function handleTilt(e) {
+            const el = document.getElementById('hero-content');
+            const rect = el.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((y - centerY) / centerY) * -10; // Max 10deg rotation
+            const rotateY = ((x - centerX) / centerX) * 10;
+
+            el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        }
+
+        // Reset tilt on mouse leave
+        document.getElementById('home').addEventListener('mouseleave', () => {
+            document.getElementById('hero-content').style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+        });
+
+
+        // --- 5. Scroll-linked Traffic Animation (Solutions Section) ---
+        const solutionsSection = document.getElementById('solutions');
+        const trafficCar = document.getElementById('traffic-car');
+        const trafficCar2 = document.getElementById('traffic-car-2');
+
+        window.addEventListener('scroll', () => {
+            const rect = solutionsSection.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+
+            // Calculate how far into the section we are (0 to 1)
+            if (rect.top < windowHeight && rect.bottom > 0) {
+                const percentage = 1 - (rect.bottom / (rect.height + windowHeight));
+                // Move car from 0% to 100% left
+                trafficCar.style.left = `${percentage * 120}%`; 
+                trafficCar2.style.left = `${percentage * 150}%`; 
+            }
+        });
+
+        // Mobile Menu
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        btn.addEventListener('click', () => menu.classList.toggle('hidden'));
+        
+        // Sticky Navbar
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('shadow-md', 'py-0');
+            } else {
+                navbar.classList.remove('shadow-md', 'py-0');
+            }
+        });
+
+    </script>
+</body>
+</html>
