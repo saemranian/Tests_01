@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATM – Intelligent Transport Systems</title>
+    <meta name="description" content="Leading system integrator in smart mobility and payment solutions across Europe and MENA.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            cursor: none;
+            overflow-x: hidden;
+            background-color: #0f172a; /* Darker base for better contrast with effects */
+            color: #f8fafc;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* --- Custom Cursor --- */
+        .cursor-dot, .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #2dd4bf;
+        }
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(45, 212, 191, 0.5);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+        body.hovering .cursor-outline {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(45, 212, 191, 0.1);
+            border-color: #2dd4bf;
+        }
+
+        /* --- 3D Interactions --- */
+        .tilt-card {
+            /* Smooth return to center on mouse leave */
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+            will-change: transform;
+            transform-style: preserve-3d;
+        }
+        
+        .tilt-card-inner {
+            transform: translateZ(20px); /* Pop content out */
+        }
+
+        /* --- Reveal Animations --- */
+        /* Base state for items */
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(40px) scale(0.95);
+            transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+        }
+        
+        /* Active state */
+        .reveal-item.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Staggered Delays (Helper classes) */
+        .delay-100 { transition-delay: 100ms; }
+        .delay-200 { transition-delay: 200ms; }
+        .delay-300 { transition-delay: 300ms; }
+        .delay-400 { transition-delay: 400ms; }
+
+        /* Gradient Text Helper */
+        .gradient-text {
+            background: linear-gradient(to right, #2dd4bf, #06b6d4, #2dd4bf);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 4s linear infinite;
+        }
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        /* --- Canvas Layer --- */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Always in background */
+        }
+        
+        /* Section Spacing */
+        section {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Card Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            transform-style: preserve-3d;
+        }
+        
+        /* Hover Glow Effect for cards */
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(45, 212, 191, 0.15), transparent 40%);
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .glass-card:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-teal-500 selection:text-white">
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot hidden md:block"></div>
+    <div class="cursor-outline hidden md:block"></div>
+
+    <!-- The 3D Interactive Network Canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Navigation -->
+    <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 bg-slate-900/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="hover-trigger cursor-pointer flex items-center gap-2 reveal-item active" onclick="window.scrollTo(0,0)">
+                    <div class="w-10 h-10 bg-gradient-to-tr from-teal-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg">A</div>
+                    <span class="font-bold text-2xl tracking-tighter text-white">ATM <span class="text-teal-400 font-light">ITS</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#about" class="text-slate-300 hover:text-teal-400 font-medium transition hover-trigger reveal-item active delay-100">About Us</a>
+                    <a href="#services" class="text-slate-300 hover:text-teal-400 font-medium transition hover-trigger reveal-item active delay-200">Services</a>
+                    <a href="#solutions" class="text-slate-300 hover:text-teal-400 font-medium transition hover-trigger reveal-item active delay-300">Solutions</a>
+                    <a href="#partners" class="text-slate-300 hover:text-teal-400 font-medium transition hover-trigger reveal-item active delay-400">Partners</a>
+                </div>
+                <a href="#contact" class="hidden md:block px-6 py-2.5 rounded-full bg-teal-600 text-white font-medium hover:bg-teal-500 transition shadow-lg transform hover:-translate-y-1 hover-trigger reveal-item active delay-200">Contact Us</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header id="home" class="relative h-screen min-h-[800px] flex items-center justify-center overflow-hidden">
+        
+        <!-- Wrapper for Global Parallax Tilt -->
+        <div id="hero-tilt-wrapper" class="relative z-10 text-center px-4 max-w-6xl mx-auto" style="transform-style: preserve-3d; perspective: 1000px;">
+            
+            <!-- Badge -->
+            <div class="flex justify-center mb-8 reveal-item active">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/10 border border-teal-500/30 backdrop-blur-md transform translate-z-[50px]">
+                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                    <span class="text-teal-300 font-bold text-sm tracking-widest uppercase">Smart Mobility Integrator</span>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <h1 class="text-6xl md:text-9xl font-bold text-white mb-6 leading-[0.95] tracking-tight drop-shadow-2xl" style="transform: translateZ(30px);">
+                <div class="reveal-item active delay-100">Driving the</div>
+                <div class="reveal-item active delay-200">
+                    <span class="gradient-text pb-2 block">Transformation</span>
+                </div>
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="text-lg md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed reveal-item active delay-300" style="transform: translateZ(20px);">
+                Delivering advanced ITS and payment solutions across Europe and the MENA region. Innovative, tailor-made, and future-ready.
+            </p>
+
+            <!-- Buttons -->
+            <div class="flex flex-col sm:flex-row gap-6 justify-center reveal-item active delay-400" style="transform: translateZ(40px);">
+                <a href="#services" class="hover-trigger relative px-10 py-5 rounded-full bg-teal-600 text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 shadow-[0_0_40px_rgba(45,212,191,0.3)] group">
+                    <span class="relative z-10 flex items-center gap-2">Explore Solutions <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i></span>
+                </a>
+                <a href="#contact" class="hover-trigger px-10 py-5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white font-bold text-lg hover:bg-white/10 hover:border-white/30 transition">
+                    Contact Us
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-24 items-center">
+                <div class="reveal-group">
+                    <div>
+                        <h2 class="text-teal-400 font-bold tracking-widest uppercase mb-4 text-sm reveal-item">About Us</h2>
+                        <h3 class="text-5xl md:text-7xl font-bold text-white mb-8 leading-none reveal-item">Our Story & <br>Legacy</h3>
+                    </div>
+                    <div class="space-y-8 text-lg text-slate-400 leading-relaxed">
+                        <p class="reveal-item">
+                            <span class="font-bold text-white">ATM – Intelligent Transport Systems</span> is a leading system integrator in smart mobility. We don't just follow trends; we set the pace for the future of transport.
+                        </p>
+                        <p class="reveal-item">
+                            With over <span class="text-teal-400 font-bold">45 years in France</span> and <span class="text-teal-400 font-bold">15 years in the UAE</span>, ATM drives the transformation of public transport.
+                        </p>
+                    </div>
+                    <!-- Stats Grid with Local Tilt -->
+                    <div class="grid grid-cols-3 gap-6 pt-10 reveal-group">
+                        <div class="glass-card p-6 rounded-2xl text-center hover:bg-teal-900/20 transition hover-trigger tilt-card reveal-item">
+                            <div class="tilt-card-inner">
+                                <span class="block text-4xl font-bold text-white mb-2">2012</span>
+                                <span class="text-xs text-slate-500 uppercase tracking-wider">Est. in UAE</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 rounded-2xl text-center hover:bg-teal-900/20 transition hover-trigger tilt-card reveal-item">
+                            <div class="tilt-card-inner">
+                                <span class="block text-4xl font-bold text-white mb-2">50+</span>
+                                <span class="text-xs text-slate-500 uppercase tracking-wider">Engineers</span>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 rounded-2xl text-center hover:bg-teal-900/20 transition hover-trigger tilt-card reveal-item">
+                            <div class="tilt-card-inner">
+                                <span class="block text-4xl font-bold text-white mb-2">GCC</span>
+                                <span class="text-xs text-slate-500 uppercase tracking-wider">Coverage</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 3D Card Image -->
+                <div class="tilt-card relative h-[600px] hover-trigger reveal-item">
+                    <div class="absolute inset-0 bg-slate-800 rounded-3xl overflow-hidden border border-slate-700 shadow-2xl">
+                        <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-teal-900 to-transparent"></div>
+                        <!-- Placeholder Art -->
+                        <div class="w-full h-full flex items-center justify-center">
+                            <i class="fas fa-building text-9xl text-slate-700"></i>
+                        </div>
+                        <div class="absolute bottom-10 left-10 p-6 glass-card rounded-xl tilt-card-inner">
+                            <h4 class="text-white font-bold text-xl">Regional HQ</h4>
+                            <p class="text-teal-400 text-sm">Abu Dhabi, UAE</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SERVICES SECTION -->
+    <section id="services" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-20 reveal-group">
+                <h2 class="text-teal-400 font-bold tracking-widest uppercase mb-2 text-sm reveal-item">Our Expertise</h2>
+                <h3 class="text-5xl font-bold text-white reveal-item">End-to-End Integration</h3>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 reveal-group">
+                <!-- Service 1 -->
+                <div class="glass-card p-10 rounded-3xl hover:bg-white/5 transition duration-300 tilt-card hover-trigger reveal-item">
+                    <div class="tilt-card-inner">
+                        <div class="w-16 h-16 bg-teal-500/10 rounded-2xl flex items-center justify-center mb-8 text-teal-400 border border-teal-500/20">
+                            <i class="fas fa-cogs text-3xl"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-4">System Integration</h4>
+                        <p class="text-slate-400 leading-relaxed mb-8">
+                            Integrating complex ITS solutions into existing infrastructures. From design specifications to commissioning.
+                        </p>
+                        <a href="#contact" class="text-teal-400 font-bold flex items-center gap-2 hover:gap-4 transition-all">Explore <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <!-- Service 2 -->
+                <div class="glass-card p-10 rounded-3xl hover:bg-white/5 transition duration-300 tilt-card hover-trigger reveal-item">
+                    <div class="tilt-card-inner">
+                        <div class="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mb-8 text-cyan-400 border border-cyan-500/20">
+                            <i class="fas fa-microchip text-3xl"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-4">Smart Maintenance</h4>
+                        <p class="text-slate-400 leading-relaxed mb-8">
+                            Proactive maintenance powered by AI to ensure system longevity and optimal performance metrics.
+                        </p>
+                        <a href="#contact" class="text-cyan-400 font-bold flex items-center gap-2 hover:gap-4 transition-all">Explore <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <!-- Service 3 -->
+                <div class="glass-card p-10 rounded-3xl hover:bg-white/5 transition duration-300 tilt-card hover-trigger reveal-item">
+                    <div class="tilt-card-inner">
+                        <div class="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-8 text-blue-400 border border-blue-500/20">
+                            <i class="fas fa-chart-network text-3xl"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-4">Strategic Data</h4>
+                        <p class="text-slate-400 leading-relaxed mb-8">
+                            Dynamic agility to adapt to rapid technological changes, focusing on data-driven optimization.
+                        </p>
+                        <a href="#contact" class="text-blue-400 font-bold flex items-center gap-2 hover:gap-4 transition-all">Explore <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SOLUTIONS SECTION -->
+    <section id="solutions" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-20 items-center">
+                <div class="reveal-group">
+                    <span class="text-teal-400 font-bold tracking-widest uppercase text-sm mb-4 block reveal-item">Innovation Lab</span>
+                    <h2 class="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight reveal-item">Future-Ready <br> <span class="gradient-text">Mobility</span></h2>
+                    <ul class="space-y-6 reveal-group">
+                        <li class="flex items-center gap-4 text-slate-300 reveal-item">
+                            <span class="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-400 font-bold text-sm">01</span>
+                            Advanced Traffic Management
+                        </li>
+                        <li class="flex items-center gap-4 text-slate-300 reveal-item">
+                            <span class="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-sm">02</span>
+                            Integrated Payment Gateways
+                        </li>
+                        <li class="flex items-center gap-4 text-slate-300 reveal-item">
+                            <span class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-sm">03</span>
+                            Real-time Data Analytics
+                        </li>
+                    </ul>
+                </div>
+                <div class="tilt-card hover-trigger reveal-item">
+                    <div class="aspect-video glass-card rounded-2xl flex items-center justify-center border border-white/10 relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-teal-900/40 to-transparent opacity-50"></div>
+                        <div class="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center pl-1 border border-white/20 group-hover:scale-110 transition cursor-pointer tilt-card-inner">
+                            <i class="fas fa-play text-white text-3xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PARTNERS SECTION -->
+    <section id="partners" class="py-24 border-t border-white/5 bg-white/5 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="mb-12 reveal-group">
+                <h2 class="text-teal-400 font-bold tracking-widest uppercase mb-2 text-sm reveal-item">Our Ecosystem</h2>
+                <h3 class="text-3xl font-bold text-white reveal-item">Trusted by Industry Leaders</h3>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 opacity-70 reveal-group">
+                <div class="hover-trigger text-2xl font-bold text-slate-500 hover:text-white transition reveal-item">PARTNER 01</div>
+                <div class="hover-trigger text-2xl font-bold text-slate-500 hover:text-white transition reveal-item">PARTNER 02</div>
+                <div class="hover-trigger text-2xl font-bold text-slate-500 hover:text-white transition reveal-item">PARTNER 03</div>
+                <div class="hover-trigger text-2xl font-bold text-slate-500 hover:text-white transition reveal-item">PARTNER 04</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section id="contact" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-16">
+                <div class="reveal-group">
+                    <h2 class="text-teal-400 font-bold tracking-widest uppercase mb-2 text-sm reveal-item">Contact Us</h2>
+                    <h3 class="text-5xl font-bold text-white mb-8 reveal-item">Let's Build the <br>Future</h3>
+                    <p class="text-slate-400 mb-12 leading-relaxed reveal-item">
+                        Ready to transform your infrastructure? Reach out to our team.
+                    </p>
+                    <div class="space-y-6 text-slate-300 reveal-group">
+                        <div class="flex items-center gap-4 reveal-item">
+                            <i class="fas fa-map-marker-alt text-teal-400"></i> Abu Dhabi & Dubai, UAE
+                        </div>
+                        <div class="flex items-center gap-4 reveal-item">
+                            <i class="fas fa-envelope text-teal-400"></i> info@atm-its.com
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-10 rounded-3xl tilt-card reveal-item">
+                    <form class="space-y-6 tilt-card-inner">
+                        <div class="grid grid-cols-2 gap-6">
+                            <input type="text" placeholder="Name" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition hover-trigger">
+                            <input type="text" placeholder="Company" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition hover-trigger">
+                        </div>
+                        <input type="email" placeholder="Email" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition hover-trigger">
+                        <textarea rows="4" placeholder="Message" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition hover-trigger"></textarea>
+                        <button class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 rounded-lg transition hover-trigger">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black py-12 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-white font-bold text-xl reveal-item">ATM ITS</div>
+            <div class="text-slate-500 text-sm reveal-item">© 2025 All Rights Reserved.</div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE SCRIPT -->
+    <script>
+        // --- 1. Cursor Logic ---
+        const dot = document.querySelector('.cursor-dot');
+        const outline = document.querySelector('.cursor-outline');
+        
+        window.addEventListener('mousemove', (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+            
+            // Mouse tracking variables for CSS glow effect
+            document.documentElement.style.setProperty('--mouse-x', `${posX}px`);
+            document.documentElement.style.setProperty('--mouse-y', `${posY}px`);
+            
+            dot.style.left = `${posX}px`;
+            dot.style.top = `${posY}px`;
+            
+            outline.animate({
+                left: `${posX}px`,
+                top: `${posY}px`
+            }, { duration: 500, fill: "forwards" });
+        });
+
+        document.querySelectorAll('.hover-trigger').forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        // --- 2. 3D Tilt Logic (Split into Global & Local) ---
+        
+        // A. GLOBAL HERO TILT (Atmospheric)
+        const heroTiltWrapper = document.getElementById('hero-tilt-wrapper');
+        document.addEventListener('mousemove', (e) => {
+             if (window.scrollY > window.innerHeight) return; // Only animate when hero is visible
+             
+             requestAnimationFrame(() => {
+                const x = e.clientX;
+                const y = e.clientY;
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                
+                const rotateX = ((y / h) - 0.5) * -5; // Subtle global tilt
+                const rotateY = ((x / w) - 0.5) * 5;
+                
+                heroTiltWrapper.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+             });
+        });
+
+        // B. LOCAL MAGNETIC TILT (For Cards)
+        const tiltCards = document.querySelectorAll('.tilt-card');
+        
+        tiltCards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Calculate center relative to card
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                // Stronger local rotation (up to 15deg)
+                const rotateX = ((y - centerY) / centerY) * -15; 
+                const rotateY = ((x - centerX) / centerX) * 15;
+                
+                // Apply transform locally
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                
+                // Update CSS variable for the glow effect relative to the card
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+
+            // Reset on leave
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
+            });
+        });
+
+        // --- 3. Staggered Scroll Reveal System ---
+        
+        // Helper to set delays for grouped items
+        const revealGroups = document.querySelectorAll('.reveal-group');
+        revealGroups.forEach(group => {
+            const items = group.querySelectorAll('.reveal-item');
+            items.forEach((item, index) => {
+                // Add staggered delay: 100ms, 200ms, 300ms...
+                item.style.transitionDelay = `${index * 100}ms`;
+            });
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+        document.querySelectorAll('.reveal-item').forEach(el => observer.observe(el));
+
+        // --- 4. ADVANCED CANVAS ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        
+        let particles = [];
+        let gridLines = [];
+        let scrollY = 0;
+        let targetScrollY = 0;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            initParticles();
+            initGrid();
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2 + 1;
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.density = (Math.random() * 30) + 1;
+            }
+            update(mouse) {
+                this.y = (this.baseY + scrollY * 0.2) % height;
+                if(this.y < 0) this.y += height;
+
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx*dx + dy*dy);
+                if (distance < 100) {
+                    const force = (100 - distance) / 100;
+                    const directionX = (dx / distance) * force * this.density;
+                    const directionY = (dy / distance) * force * this.density;
+                    this.x -= directionX;
+                    this.y -= directionY;
+                } else {
+                    if (this.x !== this.baseX) {
+                        let dx = this.x - this.baseX;
+                        this.x -= dx/10;
+                    }
+                }
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(45, 212, 191, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class GridLine {
+            constructor(x) {
+                this.x = x;
+                this.pulses = [];
+                if(Math.random() > 0.5) {
+                    this.pulses.push({ y: Math.random() * height, speed: Math.random() * 2 + 2 });
+                }
+            }
+            updateAndDraw(mouse) {
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.lineWidth = 1;
+                ctx.moveTo(this.x, 0);
+                ctx.lineTo(this.x, height);
+                ctx.stroke();
+
+                let offsetX = (mouse.x - width/2) * 0.05;
+                let drawX = this.x - offsetX;
+
+                this.pulses.forEach(p => {
+                    p.y += p.speed + (Math.abs(scrollY - targetScrollY) * 0.1); 
+                    if(p.y > height) p.y = -100;
+
+                    let pulseHeight = 60 + (p.speed * 10);
+                    let gradient = ctx.createLinearGradient(drawX, p.y, drawX, p.y + pulseHeight);
+                    gradient.addColorStop(0, 'rgba(45, 212, 191, 0)');
+                    gradient.addColorStop(0.5, 'rgba(45, 212, 191, 0.8)');
+                    gradient.addColorStop(1, 'rgba(45, 212, 191, 0)');
+                    
+                    ctx.beginPath();
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 2;
+                    ctx.moveTo(drawX, p.y);
+                    ctx.lineTo(drawX, p.y + pulseHeight);
+                    ctx.stroke();
+                });
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            let numberOfParticles = (width * height) / 15000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function initGrid() {
+            gridLines = [];
+            let spacing = width / 10; 
+            for(let x = 0; x <= width; x += spacing) {
+                gridLines.push(new GridLine(x));
+            }
+        }
+
+        let mouse = { x: -1000, y: -1000 };
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        window.addEventListener('scroll', () => {
+            targetScrollY = window.scrollY;
+        });
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            scrollY += (targetScrollY - scrollY) * 0.1;
+
+            gridLines.forEach(line => line.updateAndDraw(mouse));
+
+            particles.forEach(particle => {
+                particle.update(mouse);
+                particle.draw();
+            });
+
+            ctx.strokeStyle = 'rgba(45, 212, 191, 0.1)';
+            ctx.lineWidth = 0.5;
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    let dx = particles[a].x - particles[b].x;
+                    let dy = particles[a].y - particles[b].y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+
+    </script>
+</body>
+</html>
