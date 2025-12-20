@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head>
   <meta charset="utf-8">
-  <title>Spark_Splat_Base_22 — Fix Vis &amp; Progress</title>
+  <title>Spark_Splat_Base_23 — Forced Progress</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     :root{--bg:#0b0d10;--panel:#0f1113;--accent:#1e90ff;--success:#00e676}
@@ -113,6 +113,7 @@
   import { SplatMesh } from '@sparkjsdev/spark';
 
   // --- CONFIGURATION BLOCK START ---
+  // This object is the source of truth for the export.
   const viewerConfig = {
   "modelUrl": "Room_1403_772KS_UHD_90ks.spz",
   "splat": {
@@ -136,14 +137,14 @@
   },
   "camera": {
     "position": [
-      18.925418841741973,
-      12.582172678472533,
-      -3.8589606409639794
+      6.148807305938465,
+      9.425634823089016,
+      -11.707635072836432
     ],
     "target": [
-      10.04612540729928,
-      9.993982227447331,
-      -0.05640646064196146
+      8.759176774871165,
+      7.212668416457573,
+      -2.3114256818754075
     ],
     "focal": 14
   },
@@ -185,13 +186,15 @@
   const loaderText = document.getElementById('loaderText');
   const loaderPercent = document.getElementById('loaderPercent');
   
-  // UI Helpers
+  // UI Helpers that don't crash if UI is missing
   const get = id => document.getElementById(id);
+  // Helper to safely add listeners only if element exists
   const on = (el, type, fn) => { if(el) el.addEventListener(type, fn); };
+  // Helper to set values only if element exists
   const setVal = (el, val) => { if(el) el.value = val; };
   const setCheck = (el, val) => { if(el) el.checked = val; };
 
-  // UI Elements Reference
+  // UI Elements Reference (May be null in exported file)
   const ui = {
     modelUrl: get('modelUrl'), fileSizeMB: get('fileSizeMB'), // ADDED reference
     loadUrlBtn: get('loadUrlBtn'), localFile: get('localFile'), exportHtmlBtn: get('exportHtmlBtn'),
@@ -263,7 +266,7 @@
 
   // ---------------- UI Sync (Config -> UI) ----------------
   function syncUIToConfig() {
-    if(!ui.rotX) return; 
+    if(!ui.rotX) return; // UI doesn't exist (Exported mode)
     
     setVal(ui.modelUrl, viewerConfig.modelUrl);
     
@@ -378,7 +381,14 @@
     } catch(err) {
       console.error("Load Failed:", err);
       if(statusEl) statusEl.textContent='Status: Error loading. Check console.';
+      
+      // Exported File: Alert user if local loading fails (likely CORS)
+      if(!ui.modelUrl && typeof src === 'string') {
+         alert("Error Loading Model!\n\nIf you are running this file locally (double-clicking from desktop), modern browsers block loading external .ply files for security (CORS).\n\nSolution:\n1. Upload this HTML and your .ply to a web server (like GitHub Pages).\n2. OR use a local server (e.g., VS Code Live Server).");
+      }
+
     } finally {
+      // Hide Loader
       if(loader) loader.style.display = 'none';
     }
   }
@@ -394,6 +404,7 @@
   window.addEventListener('keydown', (e) => {
     if(e.key === 'u' || e.key === 'U') toggleUI();
   });
+  // Ensure init state matches variable
   if(panel) panel.style.display = 'none';
 
   // ---------------- Live Updates ----------------
