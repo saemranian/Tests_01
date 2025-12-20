@@ -1,9 +1,8 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Spark_Splat_Base_20 — Progress Fix</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <title>Spark_Splat_Base_22 — Fix Vis &amp; Progress</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     :root{--bg:#0b0d10;--panel:#0f1113;--accent:#1e90ff;--success:#00e676}
     html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#eaeaea}
@@ -92,111 +91,16 @@
     <canvas id="c"></canvas>
 
     <!-- Loading Bar -->
-    <div id="loader">
+    <div id="loader" style="display: none;">
       <div class="spinner"></div>
-      <div id="loaderText">Loading Low Res...</div>
-      <div id="loaderPercent">0%</div>
+      <div id="loaderText">Loading Model...</div>
+      <div id="loaderPercent">100%</div>
     </div>
 
     <!-- UI Hint -->
-    <div id="uiHint">Press <strong>'U'</strong> for controls</div>
+    
 
-    <div id="panel">
-      <h3>Spark Viewer 0.1.10</h3>
-      
-      <div class="loader-section">
-        <div class="section-title" style="margin-top:0; border:none">Progressive Load</div>
-        
-        <div class="row" style="margin:4px 0">
-          <label style="flex:0 0 60px; font-size:11px; color:#aaa">Low Res:</label>
-          <input id="modelUrlLow" type="text" placeholder="10mb_model.ply">
-        </div>
-        <div class="row" style="margin:4px 0 0 70px">
-           <input type="file" id="localFileLow" accept=".ply,.splat,.ksplat,.spz">
-        </div>
-        
-        <div class="row" style="margin:4px 0">
-          <label style="flex:0 0 60px; font-size:11px; color:#aaa">High Res:</label>
-          <input id="modelUrlHigh" type="text" placeholder="150mb_model.ply">
-        </div>
-        <div class="row" style="margin:4px 0 0 70px">
-           <input type="file" id="localFileHigh" accept=".ply,.splat,.ksplat,.spz">
-        </div>
-
-        <button class="btn primary" id="loadUrlBtn" style="width:100%; margin-top:8px">Load Progressive</button>
-        
-        <hr style="opacity:.06;border:none;height:1px;background:#ffffff10;margin:8px 0">
-        
-        <div class="row">
-          <button class="btn success" id="exportHtmlBtn" style="width:100%">Export Configured HTML</button>
-        </div>
-        <div style="font-size:11px; color:#888; margin-top:4px; line-height:1.3">
-          Exports a viewer that loads Low Res first, then swaps to High Res automatically.
-        </div>
-      </div>
-
-      <div id="status" class="small" style="color: #aaa; margin-bottom: 8px;">Status: Waiting...</div>
-
-      <div class="section-title">Splat transform</div>
-      <div class="row"><label>Rot X°</label><input id="rotX" type="range" min="-180" max="180" value="0"><input id="rotXn" type="number" class="smallnum" value="0"><button class="btn reset" data-reset="rotX">Reset</button></div>
-      <div class="row"><label>Rot Y°</label><input id="rotY" type="range" min="-180" max="180" value="0"><input id="rotYn" type="number" class="smallnum" value="0"><button class="btn reset" data-reset="rotY">Reset</button></div>
-      <div class="row"><label>Rot Z°</label><input id="rotZ" type="range" min="-180" max="180" value="0"><input id="rotZn" type="number" class="smallnum" value="0"><button class="btn reset" data-reset="rotZ">Reset</button></div>
-
-      <div class="row"><label>Pos X</label><input id="posX" type="range" min="-10" max="10" step="0.01" value="0"><input id="posXn" type="number" class="smallnum" step="0.01" value="0"><button class="btn reset" data-reset="posX">Reset</button></div>
-      <div class="row"><label>Pos Y</label><input id="posY" type="range" min="-10" max="10" step="0.01" value="0"><input id="posYn" type="number" class="smallnum" step="0.01" value="0"><button class="btn reset" data-reset="posY">Reset</button></div>
-      <div class="row"><label>Pos Z</label><input id="posZ" type="range" min="-10" max="10" step="0.01" value="0"><input id="posZn" type="number" class="smallnum" step="0.01" value="0"><button class="btn reset" data-reset="posZ">Reset</button></div>
-
-      <div class="row"><label>Scale</label><input id="scale" type="range" min="0.01" max="4" step="0.01" value="1"><input id="scalen" type="number" class="smallnum" step="0.01" value="1"><button class="btn reset" data-reset="scale">Reset</button></div>
-      <div class="row"><label>Splat size</label><input id="splatSize" type="range" min="0.001" max="4" step="0.001" value="1"><input id="splatSizen" type="number" class="smallnum" step="0.001" value="1"><button class="btn reset" data-reset="splatSize">Reset</button></div>
-      <div class="row"><label>Opacity</label><input id="opacity" type="range" min="0" max="1" step="0.01" value="1"><input id="opacityn" type="number" class="smallnum" step="0.01" value="1"><button class="btn reset" data-reset="opacity">Reset</button></div>
-
-      <div class="section-title">Camera constraints & Focal</div>
-      <div class="row"><label>Focal length (mm)</label><input id="focal" type="number" step="1" value="35" class="smallnum"><button class="btn reset" data-reset="focal">Reset</button></div>
-
-      <div class="row"><label>Min distance</label><input id="minDist" type="number" step="0.1" value="1"><button class="btn reset" data-reset="minDist">Reset</button></div>
-      <div class="row"><label>Max distance</label><input id="maxDist" type="number" step="0.1" value="10"><button class="btn reset" data-reset="maxDist">Reset</button></div>
-
-      <div class="row"><label>Min polar°</label><input id="minPolar" type="number" step="1" value="9"><button class="btn reset" data-reset="minPolar">Reset</button></div>
-      <div class="row"><label>Max polar°</label><input id="maxPolar" type="number" step="1" value="162"><button class="btn reset" data-reset="maxPolar">Reset</button></div>
-
-      <div class="row"><label>Min azimuth°</label><input id="minAz" type="number" step="1" value="-180"><button class="btn reset" data-reset="minAz">Reset</button></div>
-      <div class="row"><label>Max azimuth°</label><input id="maxAz" type="number" step="1" value="180"><button class="btn reset" data-reset="maxAz">Reset</button></div>
-
-      <div class="row"><label>Rotate Speed</label><input id="rotSpeed" type="range" min="0.1" max="3" step="0.1" value="1"><input id="rotSpeedn" type="number" class="smallnum" step="0.1" value="1"><button class="btn reset" data-reset="rotSpeed">Reset</button></div>
-      <div class="row"><label>Pan Speed</label><input id="panSpeed" type="range" min="0.1" max="3" step="0.1" value="1"><input id="panSpeedn" type="number" class="smallnum" step="0.1" value="1"><button class="btn reset" data-reset="panSpeed">Reset</button></div>
-      <div class="row"><label>Zoom Speed</label><input id="zoomSpeed" type="range" min="0.1" max="3" step="0.1" value="1"><input id="zoomSpeedn" type="number" class="smallnum" step="0.1" value="1"><button class="btn reset" data-reset="zoomSpeed">Reset</button></div>
-
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn primary" id="applyCam">Apply</button>
-        <button class="btn" id="resetCam">Frame</button>
-        <button class="btn" id="logCam">Info (i)</button>
-      </div>
-
-      <div style="margin-top:8px"><strong>Locks</strong></div>
-      <div class="row" style="gap:6px">
-        <label><input id="lockPOI" type="checkbox"> Lock POI</label>
-        <label><input id="lockV" type="checkbox"> Lock Vertical</label>
-        <label><input id="lockH" type="checkbox"> Lock Horizontal (azimuth only)</label>
-        <label><input id="lockD" type="checkbox"> Lock Depth</label>
-      </div>
-
-      <div class="section-title">Camera POI manual</div>
-      <div class="row"><label>Target X</label><input id="poiX" type="number" step="0.01" value="0"></div>
-      <div class="row"><label>Target Y</label><input id="poiY" type="number" step="0.01" value="0"></div>
-      <div class="row"><label>Target Z</label><input id="poiZ" type="number" step="0.01" value="0"></div>
-      <div class="row"><button class="btn primary" id="goToManualPoi">Go to POI</button><button class="btn" id="setPoiFromCamera">Set from Cam</button></div>
-
-      <div class="section-title">POIs / Presets & Annotations</div>
-      <div class="row"><input id="poiName" type="text" placeholder="POI name"><button class="btn primary" id="savePoi">Save POI</button><button class="btn" id="removePoi">Remove</button></div>
-      <div class="row"><label>Annotation image</label><input id="poiImg" type="text" placeholder="image URL"></div>
-      <div class="row"><label>Annotation text</label><input id="poiDesc" type="text" placeholder="Short description"></div>
-      <div class="row"><select id="poiList" multiple></select></div>
-      <div style="display:flex;gap:8px;margin-top:6px"><button class="btn" id="gotoPoi">Go to selected</button><button class="btn" id="playSequence">Play sequence</button><button class="btn" id="clearPois">Clear all</button></div>
-
-      <div style="margin-top:8px"><label><input id="showAnnotations" type="checkbox" checked> Show annotations</label></div>
-
-      <div class="small" style="margin-top:6px; opacity:0.7">Tips: Shift+Click to raycast. Console: <code>_viewerHelpers</code></div>
-    </div>
+    
 
     <div id="camInfo"><div id="camPos"></div><div id="camTarget"></div></div>
     <div id="annotationLayer"></div>
@@ -210,21 +114,70 @@
 
   // --- CONFIGURATION BLOCK START ---
   const viewerConfig = {
-    modelUrlLow: '',  // Low quality (immediate)
-    modelUrlHigh: '', // High quality (background)
-    splat: { position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], opacity:1, splatSize:1 },
-    camera: { position:[0,0.2,3], target:[0,0,0], focal:35 },
-    constraints: { minDist:1, maxDist:10, minPolar:9, maxPolar:162, minAz:-180, maxAz:180, rotateSpeed:1, panSpeed:1, zoomSpeed:1 },
-    locks: { poi:false, v:false, h:false, d:false },
-    pois: [],
-    showAnnotations: true
-  };
+  "modelUrl": "Room_1403_772KS_UHD_90ks.spz",
+  "splat": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      3.141592653589793
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "opacity": 1,
+    "splatSize": 1
+  },
+  "camera": {
+    "position": [
+      18.925418841741973,
+      12.582172678472533,
+      -3.8589606409639794
+    ],
+    "target": [
+      10.04612540729928,
+      9.993982227447331,
+      -0.05640646064196146
+    ],
+    "focal": 14
+  },
+  "constraints": {
+    "minDist": 5,
+    "maxDist": 10,
+    "minPolar": 75,
+    "maxPolar": 90,
+    "minAz": -18000,
+    "maxAz": 18000,
+    "rotateSpeed": 1,
+    "panSpeed": 1,
+    "zoomSpeed": 1
+  },
+  "locks": {
+    "poi": true,
+    "v": false,
+    "h": false,
+    "d": false
+  },
+  "pois": [],
+  "showAnnotations": true
+};
+  
+  // Default Size for calculation (will be replaced on export)
+  const EXPECTED_FILE_SIZE = 22 * 1024 * 1024;
   // --- CONFIGURATION BLOCK END ---
 
   // DOM refs
   const canvas = document.getElementById('c');
   const statusEl = document.getElementById('status');
   const camInfo = document.getElementById('camInfo');
+  const camPosEl = document.getElementById('camPos');
+  const camTargetEl = document.getElementById('camTarget');
   const annotationLayer = document.getElementById('annotationLayer');
   const panel = document.getElementById('panel');
   const uiHint = document.getElementById('uiHint');
@@ -240,9 +193,8 @@
 
   // UI Elements Reference
   const ui = {
-    modelUrlLow: get('modelUrlLow'), localFileLow: get('localFileLow'),
-    modelUrlHigh: get('modelUrlHigh'), localFileHigh: get('localFileHigh'),
-    loadUrlBtn: get('loadUrlBtn'), exportHtmlBtn: get('exportHtmlBtn'),
+    modelUrl: get('modelUrl'), fileSizeMB: get('fileSizeMB'), // ADDED reference
+    loadUrlBtn: get('loadUrlBtn'), localFile: get('localFile'), exportHtmlBtn: get('exportHtmlBtn'),
     rotX: get('rotX'), rotXn: get('rotXn'), rotY: get('rotY'), rotYn: get('rotYn'), rotZ: get('rotZ'), rotZn: get('rotZn'),
     posX: get('posX'), posXn: get('posXn'), posY: get('posY'), posYn: get('posYn'), posZ: get('posZ'), posZn: get('posZn'),
     scale: get('scale'), scalen: get('scalen'), splatSize: get('splatSize'), splatSizen: get('splatSizen'), opacity: get('opacity'), opacityn: get('opacityn'),
@@ -278,8 +230,7 @@
 
   // State
   let splats = null; 
-  let loadedLowFile = null; 
-  let loadedHighFile = null; 
+  let loadedFile = null; 
   const savedState = { rotate:true, pan:true, zoom:true, minPolar:controls.minPolarAngle, maxPolar:controls.maxPolarAngle, minAz:controls.minAzimuthAngle, maxAz:controls.maxAzimuthAngle };
 
   // ---------------- Core Logic (Config -> Scene) ----------------
@@ -314,8 +265,7 @@
   function syncUIToConfig() {
     if(!ui.rotX) return; 
     
-    setVal(ui.modelUrlLow, viewerConfig.modelUrlLow);
-    setVal(ui.modelUrlHigh, viewerConfig.modelUrlHigh);
+    setVal(ui.modelUrl, viewerConfig.modelUrl);
     
     const s = viewerConfig.splat;
     const rDeg = s.rotation.map(r=>THREE.MathUtils.radToDeg(r));
@@ -345,127 +295,88 @@
     refreshPOIList();
   }
 
-  // ---------------- Frame Model ----------------
+  // ---------------- Helpers (From Working File) ----------------
+  function setCameraTargetVec(vec3){ controls.target.copy(vec3); controls.update(); }
+  function setCameraDistance(distance){ const dir = camera.position.clone().sub(controls.target).normalize(); camera.position.copy(controls.target.clone().add(dir.multiplyScalar(distance))); controls.update(); }
+
+  // ---------------- Frame Model (From Working File) ----------------
   function frameModel(center){ 
     if(!splats) return; 
     const bb = splats.getBoundingBox(false); 
     const sphere = bb.getBoundingSphere(new THREE.Sphere()); 
     const targ = center || sphere.center.clone(); 
-    controls.target.copy(targ); 
-    controls.update(); 
-    const dir = camera.position.clone().sub(controls.target).normalize(); 
-    const dist = Math.max(0.0001, sphere.radius * 2.5);
-    camera.position.copy(controls.target.clone().add(dir.multiplyScalar(dist))); 
+    setCameraTargetVec(targ); 
+    setCameraDistance(Math.max(0.0001, sphere.radius * 2.5)); 
   }
 
-  // ---------------- PROGRESSIVE LOADING LOGIC ----------------
-  async function loadProgressive(sourceLow, sourceHigh, useConfig = false){
+  // ---------------- SINGLE FILE LOADING LOGIC ----------------
+  async function loadModel(urlOrFile, useConfig = false){
     try {
       if(statusEl) statusEl.textContent='Status: Initializing...';
       if(splats){ scene.remove(splats); splats.dispose?.(); splats=null; }
 
-      // --- 1. Prepare Low Source ---
-      let lowSrc = sourceLow;
-      if(sourceLow instanceof File) {
-         lowSrc = URL.createObjectURL(sourceLow);
-         loadedLowFile = sourceLow; 
-         if(ui.modelUrlLow) ui.modelUrlLow.value = ""; // Clear text to avoid confusion
-      } else if (typeof sourceLow === 'string' && sourceLow.trim() !== "") {
-         lowSrc = sourceLow.trim();
+      let src;
+      // Handle File object or string
+      if(urlOrFile instanceof File) {
+         src = URL.createObjectURL(urlOrFile);
+         loadedFile = urlOrFile; 
+         // Clear text input if file selected to avoid confusion during export
+         if(ui.modelUrl) ui.modelUrl.value = "";
+      } else if (typeof urlOrFile === 'string' && urlOrFile.trim() !== "") {
+         src = urlOrFile.trim();
       } else {
-         if(statusEl) statusEl.textContent = 'Error: No Low Res source provided.';
+         if(statusEl) statusEl.textContent = 'Error: No source provided.';
          return; 
       }
 
-      // --- 2. Start loading LOW RES immediately ---
-      if(loaderText) loaderText.textContent = "Loading Low Res...";
+      // Show loader
+      if(loaderText) loaderText.textContent = "Loading Model...";
       if(loader) loader.style.display = 'flex';
       
-      const lowSplat = new SplatMesh({ url: lowSrc });
-      scene.add(lowSplat);
-      splats = lowSplat; // Set global ref for UI controls
+      splats = new SplatMesh({ url: src }, undefined, (e) => {
+          // Progress Callback
+          let percent = 0;
+          if (e.lengthComputable && e.total > 0) {
+              percent = (e.loaded / e.total) * 100;
+          } else {
+              // Fallback to configured size (ui.fileSizeMB in Editor, or EXPECTED_FILE_SIZE in Export)
+              // In Editor mode, ui.fileSizeMB exists. In Export mode, it doesn't, but EXPECTED_FILE_SIZE is updated by export logic.
+              
+              let total = EXPECTED_FILE_SIZE;
+              // Override if in Editor UI
+              if(ui.fileSizeMB && ui.fileSizeMB.value) {
+                  total = parseFloat(ui.fileSizeMB.value) * 1024 * 1024;
+              }
+              
+              if(total > 0) {
+                  percent = (e.loaded / total) * 100;
+                  if(percent > 99) percent = 99; // Cap
+              }
+          }
+          if(loaderPercent) loaderPercent.textContent = Math.round(percent) + '%';
+      });
+      // Force disable frustum culling to prevent visibility issues if bounding box is initially incorrect
+      splats.frustumCulled = false;
+      scene.add(splats);
       
-      await lowSplat.initialized;
+      await splats.initialized;
+      
+      // Wait a bit to ensure geometry is fully ready for bounding box calculation
+      await new Promise(r => setTimeout(r, 100));
+      
+      if(loaderPercent) loaderPercent.textContent = "100%";
       
       // Setup initial view
       if(useConfig) applyConfigToScene();
       else { resetTransformUI(); frameModel(); }
       
-      if(statusEl) statusEl.textContent='Status: Low Res Loaded. Downloading High Res...';
-      console.log("Low Res Loaded");
-
-      // Hide initial loader
-      if(loader) loader.style.display = 'none';
-
-      // --- 3. Start loading HIGH RES in background (if provided) ---
-      let highSrc = sourceHigh;
-      if(sourceHigh instanceof File) {
-         highSrc = URL.createObjectURL(sourceHigh);
-         loadedHighFile = sourceHigh;
-         if(ui.modelUrlHigh) ui.modelUrlHigh.value = "";
-      } else if (typeof sourceHigh === 'string' && sourceHigh.trim() !== "") {
-         highSrc = sourceHigh.trim();
-      } else {
-         highSrc = null;
-      }
-
-      if(highSrc) {
-        if(loader) loader.style.display = 'flex'; // Bring back loader for high res
-        if(loaderText) loaderText.textContent = "Refining Details...";
-        
-        // **FIXED: Correctly attach progress callback**
-        // In some versions of Spark, the constructor is new SplatMesh(url, options, onProgress) or (options)
-        // We will try standard Three.js loader pattern usually adopted by wrapper libs or pass options object if Spark API changed.
-        // Checking Spark 0.1.10 docs/source pattern: typically SplatMesh({url: ...}) doesn't expose progress easily in constructor.
-        // We will rely on internal loader if possible, or XHR.
-        // However, if Spark 0.1.10 supports onProgress in a different way, we must adapt.
-        // Assuming SplatMesh inherits from Object3D and uses a loader internally.
-        
-        // Attempt 1: Check if Spark exposes a way to hook into the stream. 
-        // If not standard, we simulate or use a specific loader. 
-        // But let's try passing it as a second arg which is often 'onProgress' in Three.js
-        
-        const highSplat = new SplatMesh({ url: highSrc }, undefined, (e) => {
-            // e might be an event with .loaded and .total
-            if (e.lengthComputable || (e.total && e.total > 0)) {
-                const percent = (e.loaded / e.total) * 100;
-                if(loaderPercent) loaderPercent.textContent = Math.round(percent) + '%';
-            } else {
-                // Fallback if total is not known (common with some server compression)
-                if(loaderPercent) loaderPercent.textContent = (e.loaded / 1024 / 1024).toFixed(1) + ' MB';
-            }
-        });
-        
-        // Wait for high res to be fully ready
-        await highSplat.initialized;
-        
-        console.log("High Res Ready. Swapping...");
-        
-        // Match transforms
-        highSplat.position.copy(lowSplat.position);
-        highSplat.rotation.copy(lowSplat.rotation);
-        highSplat.scale.copy(lowSplat.scale);
-        if(lowSplat.material && highSplat.material) {
-           highSplat.material.opacity = lowSplat.material.opacity;
-           highSplat.material.transparent = lowSplat.material.transparent;
-        }
-
-        // Swap
-        scene.remove(lowSplat);
-        lowSplat.dispose?.();
-        scene.add(highSplat);
-        splats = highSplat; // Update global ref
-        
-        if(splats.maxSh) splats.maxSh = 3;
-        if(splats.updateGenerator) splats.updateGenerator();
-        
-        if(statusEl) statusEl.textContent='Status: High Res Loaded.';
-      } else {
-        if(statusEl) statusEl.textContent='Status: Low Res Only (No High Res provided).';
-      }
+      if(statusEl) statusEl.textContent='Status: Model Loaded.';
+      
+      if(splats.maxSh) splats.maxSh = 3;
+      if(splats.updateGenerator) splats.updateGenerator();
 
     } catch(err) {
-      console.error("Progressive Load Failed:", err);
+      console.error("Load Failed:", err);
       if(statusEl) statusEl.textContent='Status: Error loading. Check console.';
     } finally {
       if(loader) loader.style.display = 'none';
@@ -540,6 +451,7 @@
     on(numEl, 'change', ()=>{ if(rangeEl) rangeEl.value = numEl.value; updateFromUI(); }); 
   }
   
+  // Bind all inputs
   bindPair(ui.rotX, ui.rotXn); bindPair(ui.rotY, ui.rotYn); bindPair(ui.rotZ, ui.rotZn);
   bindPair(ui.posX, ui.posXn); bindPair(ui.posY, ui.posYn); bindPair(ui.posZ, ui.posZn);
   bindPair(ui.scale, ui.scalen); bindPair(ui.splatSize, ui.splatSizen); bindPair(ui.opacity, ui.opacityn);
@@ -550,90 +462,92 @@
   on(ui.lockPOI,'change',updateFromUI); on(ui.lockV,'change',updateFromUI); on(ui.lockH,'change',updateFromUI); on(ui.lockD,'change',updateFromUI);
   on(ui.showAnnotations,'change', updateFromUI);
 
-  // LOAD BUTTON - Handle both File objects and Strings
-  on(ui.loadUrlBtn, 'click', () => { 
-    // Prefer Local Files if selected, else use URL text
-    const l = (ui.localFileLow.files && ui.localFileLow.files[0]) ? ui.localFileLow.files[0] : ui.modelUrlLow.value.trim();
-    const h = (ui.localFileHigh.files && ui.localFileHigh.files[0]) ? ui.localFileHigh.files[0] : ui.modelUrlHigh.value.trim();
-    
-    if(l) loadProgressive(l, h);
-    else alert("Please provide at least a Low Res file/URL");
-  });
-  
+  on(ui.loadUrlBtn, 'click', () => { const val = ui.modelUrl.value.trim(); if(val) loadModel(val); });
+  on(ui.localFile, 'change', (e) => { if(e.target.files && e.target.files[0]) loadModel(e.target.files[0]); });
   on(ui.applyCam, 'click', ()=> { updateFromUI(); }); 
   on(ui.resetCam, 'click', ()=> { frameModel(); }); 
   
   function logCameraInfo(showOverlay=true){ console.log('Camera Position:',camera.position); console.log('Camera Target:',controls.target); if(showOverlay && camInfo){ camInfo.style.display='block'; if(camPosEl) camPosEl.textContent = `Cam: ${camera.position.x.toFixed(3)}, ${camera.position.y.toFixed(3)}, ${camera.position.z.toFixed(3)}`; if(camTargetEl) camTargetEl.textContent = `POI: ${controls.target.x.toFixed(3)}, ${controls.target.y.toFixed(3)}, ${controls.target.z.toFixed(3)}`; setTimeout(()=>camInfo.style.display='none',3500); } }
   on(ui.logCam, 'click',()=>{ logCameraInfo(true); });
 
-  // ---------------- Export Logic (Fixed for Progressive) ----------------
+  // ---------------- Export Logic (Fixed) ----------------
   on(ui.exportHtmlBtn, 'click', () => {
-    updateFromUI(); 
+    // 1. Snapshot Config
+    updateFromUI(); // Ensure config is fresh
     viewerConfig.camera.position = [camera.position.x, camera.position.y, camera.position.z];
     viewerConfig.camera.target = [controls.target.x, controls.target.y, controls.target.z];
     viewerConfig.pois = loadPOIs();
     
-    // Grab URLs (Text input takes priority for export, then filename of local file)
-    let urlL = ui.modelUrlLow.value.trim();
-    let urlH = ui.modelUrlHigh.value.trim();
-    
-    // Fallback to loaded filename if URL box is empty but file was loaded locally
-    if(!urlL && loadedLowFile) urlL = loadedLowFile.name;
-    if(!urlH && loadedHighFile) urlH = loadedHighFile.name;
-    
-    // If still empty, prompt
-    if(!urlL) {
-       urlL = prompt("Enter LOW Res filename (Required for export):", "");
-    }
-    
-    // Auto-clean absolute path
-    if(typeof urlL === 'string' && (urlL.match(/^[a-zA-Z]:\\/) || urlL.startsWith('/Users/'))) {
-       urlL = urlL.split(/[/\\]/).pop();
-    }
-    if(typeof urlH === 'string' && (urlH.match(/^[a-zA-Z]:\\/) || urlH.startsWith('/Users/'))) {
-       urlH = urlH.split(/[/\\]/).pop();
+    // Check Path
+    const textUrl = ui.modelUrl.value.trim();
+    if(textUrl) {
+        viewerConfig.modelUrl = textUrl;
+    } else if(currentModelUrl) {
+        viewerConfig.modelUrl = currentModelUrl;
+    } else {
+        alert("Warning: No Model URL defined. Export might be empty.");
     }
 
-    if(!urlL) { alert("Export Cancelled. Low res filename is required."); return; }
-    
-    viewerConfig.modelUrlLow = urlL;
-    viewerConfig.modelUrlHigh = urlH;
-
-    // 2. Clone DOM
+    // 2. Clone DOM for Safe Manipulation
     const cloneDoc = document.documentElement.cloneNode(true);
     
-    // 3. Remove UI
-    const clonePanel = cloneDoc.querySelector('#panel'); if(clonePanel) clonePanel.remove();
-    const cloneHint = cloneDoc.querySelector('#uiHint'); if(cloneHint) cloneHint.remove();
+    // 3. Remove UI Elements from Clone
+    const clonePanel = cloneDoc.querySelector('#panel');
+    if(clonePanel) clonePanel.remove();
+    
+    const cloneHint = cloneDoc.querySelector('#uiHint');
+    if(cloneHint) cloneHint.remove();
 
-    // 4. CLEAN UP
+    // 4. CLEAN UP RUNTIME ARTIFACTS
+    // Remove the canvas attributes (width, height, style) so it resets on load
     const cloneCanvas = cloneDoc.querySelector('canvas');
     if(cloneCanvas) {
-        cloneCanvas.removeAttribute('width'); cloneCanvas.removeAttribute('height');
-        cloneCanvas.removeAttribute('style'); cloneCanvas.removeAttribute('data-engine');
+        cloneCanvas.removeAttribute('width');
+        cloneCanvas.removeAttribute('height');
+        cloneCanvas.removeAttribute('style');
+        cloneCanvas.removeAttribute('data-engine');
     }
-    Array.from(cloneDoc.querySelector('body').children).forEach(child => {
-        if(child.tagName === 'DIV' && !child.id && child.style.position === 'absolute') child.remove();
+    
+    // Remove extra divs (LabelRenderer, etc) attached to body
+    // We only want #app
+    const cloneBody = cloneDoc.querySelector('body');
+    // Remove direct children that are simple divs without IDs (likely labelRenderer)
+    Array.from(cloneBody.children).forEach(child => {
+        if(child.tagName === 'DIV' && !child.id && child.style.position === 'absolute') {
+            child.remove();
+        }
     });
-    const cloneAnno = cloneDoc.querySelector('#annotationLayer'); if(cloneAnno) cloneAnno.innerHTML = '';
+    
+    // Empty annotation layer (it will be repopulated by script)
+    const cloneAnno = cloneDoc.querySelector('#annotationLayer');
+    if(cloneAnno) cloneAnno.innerHTML = '';
 
-    // 5. Update Script
+    // 5. Update the Config Script in the Clone
     const scripts = cloneDoc.querySelectorAll('script');
     scripts.forEach(s => {
         if(s.textContent.includes('const viewerConfig = {')) {
+            // Update ViewerConfig
             const configRegex = /const viewerConfig = \{[\s\S]*?\};/;
             const newConfigStr = `const viewerConfig = ${JSON.stringify(viewerConfig, null, 2)};`;
             s.textContent = s.textContent.replace(configRegex, newConfigStr);
+            
+            // Update EXPECTED_FILE_SIZE constant in export
+            const sizeVal = parseFloat(ui.fileSizeMB.value) || 22;
+            const sizeRegex = /const EXPECTED_FILE_SIZE = .*?;/;
+            const newSizeStr = `const EXPECTED_FILE_SIZE = ${sizeVal} * 1024 * 1024;`;
+            s.textContent = s.textContent.replace(sizeRegex, newSizeStr);
         }
     });
 
-    // 6. Download
+    // 6. Generate HTML String
     const finalHtml = '<!doctype html>\n' + cloneDoc.outerHTML;
+
+    // 7. Download
     const blob = new Blob([finalHtml], {type: 'text/html'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'spark_viewer_progressive.html';
+    a.download = 'spark_viewer_clean.html';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -675,9 +589,9 @@
   syncUIToConfig(); // UI -> Config sync check
   applyConfigToScene();
   
-  if(viewerConfig.modelUrlLow) loadProgressive(viewerConfig.modelUrlLow, viewerConfig.modelUrlHigh, true);
+  if(viewerConfig.modelUrl) loadModel(viewerConfig.modelUrl, true);
   animate();
 
   </script>
-</body>
-</html>
+
+</body></html>
