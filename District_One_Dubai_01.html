@@ -1,0 +1,111 @@
+﻿
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dubai Damac Villa 03 | 3D Splat Viewer</title>
+    <style>
+        /* Reset and Base Styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Fullscreen Iframe Container */
+        .viewer-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 1;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Home Button Styling - Moved to Bottom Left */
+        .home-button {
+            position: fixed;
+            bottom: 30px; /* Distance from bottom */
+            left: 30px;   /* Distance from left */
+            z-index: 9999; /* High z-index to stay above the iframe */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            background-color: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+        }
+
+        .home-button:hover {
+            background-color: #ffffff;
+            color: #000000;
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .home-button svg {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Responsive scaling for mobile */
+        @media (max-width: 600px) {
+            .home-button {
+                bottom: 20px;
+                left: 20px;
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 
+      Home Button 
+      target="_top" ensures the link opens in the full browser window, 
+      preventing it from loading inside the iframe by mistake.
+    -->
+    <a href="https://ahmademranian.dev/" target="_top" class="home-button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Home
+    </a>
+
+    <!-- Viewer Iframe -->
+    <div class="viewer-container">
+        <iframe 
+            src="https://lcc-viewer.xgrids.com/pub/dhgpsj-district-one-01" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            allowfullscreen>
+        </iframe>
+    </div>
+
+</body>
+
+</html>
+
