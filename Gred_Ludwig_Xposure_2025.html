@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gred Ludwig - Xposure 2025 </title>
+    <style>
+        /* Remove default spacing and hide scrollbars */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden; 
+            background-color: #000; /* Dark background while loading */
+        }
+
+        /* Force the iframe to fill the entire screen */
+        #viewer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <iframe 
+        id="viewer" 
+        src="https://superspl.at/s?id=93bc5a16" 
+        allow="fullscreen; xr-spatial-tracking" 
+        allowfullscreen>
+    </iframe>
+
+</body>
+</html>
