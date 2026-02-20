@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3DGS PlayCanvas Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">{ "imports": { "playcanvas": "https://esm.run/playcanvas" } }</script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0f172a; font-family: sans-serif; }
+        #canvas-container { position: absolute; inset: 0; overflow: hidden; }
+        canvas { position: absolute; inset: 0; width: 100%; height: 100%; outline: none; touch-action: none; cursor: grab; }
+        canvas:active { cursor: grabbing; }
+        .loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; color: white; z-index: 100; transition: opacity 0.8s; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="mb-4 text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-300" id="load-text">Downloading 3DGS...</div>
+        <div class="w-64 h-2 bg-gray-700 rounded-full overflow-hidden shadow-inner">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-teal-400 w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+    
+    <div id="canvas-container"><canvas id="pc-canvas"></canvas></div>
+    <div id="annotations-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-2 pointer-events-auto bg-gray-900/80 p-3 rounded-xl backdrop-blur-sm border border-gray-700 z-20 shadow-2xl" id="views-container"></div>
+
+    <script type="module">
+        import * as pc from 'playcanvas';
+        const state = {"layers":[{"name":"Aputure_1500w_3600ks_Sel01.compressed.ply","url":"Aputure_1500w_3600ks_Sel01.compressed.ply","transform":{"x":0,"y":0,"z":0,"rx":180,"ry":0,"rz":0,"scale":1},"visible":true}],"views":[{"id":1771612261783,"name":"Cam1","pitch":4.199999999999999,"yaw":-129.99999999999991,"distance":50,"target":{"x":-7.11958729610607,"y":20.503950817332246,"z":-9.962253261401893},"fov":45,"limits":{"minDistance":30,"maxDistance":50,"minPitch":-30,"maxPitch":15,"minYaw":-200,"maxYaw":-100}},{"id":1771612375129,"name":"Cam2","pitch":-14.000000000000005,"yaw":45.59999999999998,"distance":10,"target":{"x":7.290479405919289,"y":21.50844169926948,"z":9.453616602627996},"fov":90,"limits":{"minDistance":10,"maxDistance":30,"minPitch":-30,"maxPitch":15,"minYaw":0,"maxYaw":100}}],"annotations":[{"title":"T01","desc":"D01","x":-7.11958729610607,"y":20.503950817332246,"z":-9.962253261401893,"color":"#a855f7","size":0.85,"opacity":1},{"title":"T02","desc":"D02","x":7.290479405919289,"y":21.50844169926948,"z":9.453616602627996,"color":"#f7e955","size":1.2,"opacity":1}],"scene":{"toneMapping":3,"exposure":1},"cameraLimits":{"minDistance":10,"maxDistance":30,"minPitch":-30,"maxPitch":15,"minYaw":0,"maxYaw":100},"cameraFov":90};
+        let isRevealing = false; let revealProgress = 0; let mouseX = -1000, mouseY = -1000;
+        
+        const canvas = document.getElementById('pc-canvas');
+        function getCanvasCoords(e) { const rect = canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
+        window.addEventListener('mousemove', e => { const coords = getCanvasCoords(e); mouseX = coords.x; mouseY = coords.y; });
+        
+        const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
+        app.setCanvasFillMode(pc.FILLMODE_NONE); app.setCanvasResolution(pc.RESOLUTION_AUTO);
+        const resizeObs = new ResizeObserver(entries => { app.resizeCanvas(entries[0].contentRect.width, entries[0].contentRect.height); });
+        resizeObs.observe(document.getElementById('canvas-container'));
+        
+        app.scene.gammaCorrection = pc.GAMMA_SRGB; app.scene.toneMapping = state.scene.toneMapping; app.scene.exposure = 0.001;
+
+        const camera = new pc.Entity('Camera'); camera.addComponent('camera', { clearColor: new pc.Color(0.05, 0.05, 0.08), fov: state.cameraFov || 45 }); app.root.addChild(camera);
+
+        const orbit = {
+            pitch: 20, yaw: 45, distance: 5, target: new pc.Vec3(0,0,0), current: { pitch: 20, yaw: 45, distance: 5, target: new pc.Vec3(0,0,0) },
+            update(dt) {
+                this.distance = Math.max(state.cameraLimits.minDistance, Math.min(state.cameraLimits.maxDistance, this.distance));
+                this.pitch = Math.max(state.cameraLimits.minPitch, Math.min(state.cameraLimits.maxPitch, this.pitch));
+                this.yaw = Math.max(state.cameraLimits.minYaw, Math.min(state.cameraLimits.maxYaw, this.yaw));
+
+                const speed = Math.min(1.0, 8.0 * dt);
+                this.current.pitch = pc.math.lerp(this.current.pitch, this.pitch, speed);
+                this.current.yaw = pc.math.lerp(this.current.yaw, this.yaw, speed);
+                this.current.distance = pc.math.lerp(this.current.distance, this.distance, speed);
+                this.current.target.lerp(this.current.target, this.target, speed);
+
+                const q = new pc.Quat().setFromEulerAngles(this.current.pitch, this.current.yaw, 0);
+                const dir = new pc.Vec3(0, 0, 1); q.transformVector(dir, dir); dir.mulScalar(this.current.distance);
+                camera.setPosition(this.current.target.clone().add(dir)); camera.lookAt(this.current.target);
+            }
+        };
+
+        // Multi-file Loader
+        let loadedCount = 0;
+        function loadLayer(layerData) {
+            return new Promise(resolve => {
+                const req = new XMLHttpRequest(); req.open('GET', layerData.url, true); req.responseType = 'blob';
+                req.onprogress = (e) => { if (e.lengthComputable && state.layers.length === 1) { document.getElementById('progress-bar').style.width = ((e.loaded/e.total)*100) + '%'; } };
+                req.onload = () => {
+                    if (req.status === 200) {
+                        const blobUrl = URL.createObjectURL(req.response);
+                        app.assets.loadFromUrl(blobUrl, 'gsplat', (err, asset) => {
+                            if (!err) {
+                                const ent = new pc.Entity(); ent.addComponent('gsplat', { asset: asset });
+                                ent.setLocalPosition(layerData.transform.x, layerData.transform.y, layerData.transform.z);
+                                ent.setLocalEulerAngles(layerData.transform.rx, layerData.transform.ry, layerData.transform.rz);
+                                ent.setLocalScale(layerData.transform.scale, layerData.transform.scale, layerData.transform.scale);
+                                ent.enabled = layerData.visible;
+                                app.root.addChild(ent);
+                                
+                                // DISABLE CULLING TO FIX MULTI-SPLAT FLICKERING
+                                setTimeout(() => {
+                                    if (ent.gsplat && ent.gsplat.instance && ent.gsplat.instance.meshInstance) {
+                                        ent.gsplat.instance.meshInstance.cull = false;
+                                    }
+                                }, 200);
+                            }
+                            resolve();
+                        });
+                    } else resolve();
+                };
+                req.onerror = () => resolve(); req.send();
+            });
+        }
+
+        async function initScene() {
+            document.getElementById('load-text').innerText = `Downloading ${state.layers.length} Layers...`;
+            for(let l of state.layers) { await loadLayer(l); loadedCount++; document.getElementById('progress-bar').style.width = ((loadedCount/state.layers.length)*100) + '%'; }
+            document.getElementById('loading').style.opacity = '0';
+            isRevealing = true; revealProgress = 0;
+        }
+        initScene();
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        let isDragging = false, lastX, lastY, btn = -1;
+        function hStart(x,y,b) { isDragging = true; btn = b; lastX = x; lastY = y; }
+        function hMove(x,y) { if (!isDragging) return; const dx = x - lastX, dy = y - lastY; lastX = x; lastY = y; if (btn === 0) { orbit.yaw -= dx * 0.4; orbit.pitch -= dy * 0.4; } }
+        function hEnd() { isDragging = false; btn = -1; }
+
+        canvas.addEventListener('mousedown', e => hStart(e.clientX, e.clientY, e.button));
+        window.addEventListener('mouseup', hEnd); window.addEventListener('mousemove', e => hMove(e.clientX, e.clientY));
+        canvas.addEventListener('wheel', e => { orbit.distance *= (1 + e.deltaY * 0.001); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener('touchstart', e => { if (e.touches.length === 1) hStart(e.touches[0].clientX, e.touches[0].clientY, 0); }, {passive: false});
+        canvas.addEventListener('touchend', hEnd);
+        canvas.addEventListener('touchmove', e => { e.preventDefault(); if (e.touches.length === 1 && btn === 0) hMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+
+        const vC = document.getElementById('views-container');
+        if (state.views.length === 0) { vC.style.display = 'none'; } 
+        else {
+            state.views.forEach(v => {
+                const b = document.createElement('button');
+                b.className = 'px-5 py-2.5 bg-gray-800 hover:bg-teal-600 border border-gray-600 text-white rounded-lg font-bold text-sm transition-colors shadow-lg';
+                b.innerText = v.name;
+                b.onclick = () => { 
+                    state.cameraLimits = { ...v.limits };
+                    camera.camera.fov = v.fov || 45;
+                    orbit.pitch = v.pitch; orbit.yaw = v.yaw; orbit.distance = v.distance; orbit.target.set(v.target.x, v.target.y, v.target.z); 
+                };
+                vC.appendChild(b);
+            });
+            const v0 = state.views[0]; state.cameraLimits = { ...v0.limits };
+            camera.camera.fov = v0.fov || 45;
+            orbit.pitch = v0.pitch; orbit.yaw = v0.yaw; orbit.distance = v0.distance; orbit.target.set(v0.target.x, v0.target.y, v0.target.z);
+            orbit.current.pitch = v0.pitch; orbit.current.yaw = v0.yaw; orbit.current.distance = v0.distance; orbit.current.target.set(v0.target.x, v0.target.y, v0.target.z);
+        }
+
+        const layer = document.getElementById('annotations-layer');
+        state.annotations.forEach(ann => {
+            const mat = new pc.StandardMaterial(); const c = new pc.Color().fromString(ann.color || '#a855f7'); const opac = ann.opacity !== undefined ? ann.opacity : 1.0;
+            mat.diffuse = c; mat.emissive = c; mat.blendType = opac < 1.0 ? pc.BLEND_NORMAL : pc.BLEND_NONE; mat.opacity = opac; mat.depthWrite = opac === 1.0; mat.update();
+            const ent = new pc.Entity(); ent.addComponent('render', { type: 'sphere', material: mat });
+            const s = ann.size || 0.3; ent.setLocalScale(s, s, s); ent.setPosition(ann.x, ann.y, ann.z); app.root.addChild(ent); ann.entity = ent;
+            const el = document.createElement('div');
+            el.className = 'hidden absolute p-3 rounded-lg w-max max-w-[250px] bg-gray-900/95 text-white border border-gray-600 shadow-2xl z-50 transform -translate-x-1/2 -translate-y-[120%] pointer-events-none backdrop-blur-md';
+            el.innerHTML = `<div class="font-bold text-base mb-1" style="color: ${ann.color || '#a855f7'}">${ann.title}</div><div class="text-sm text-gray-300 whitespace-pre-wrap">${ann.desc}</div><div class="absolute w-3 h-3 bg-gray-900/95 border-b border-r border-gray-600 transform rotate-45 left-1/2 -translate-x-1/2 -bottom-[7px]"></div>`;
+            layer.appendChild(el); ann.labelEl = el;
+        });
+
+        app.on('update', (dt) => {
+            orbit.update(dt);
+            if (isRevealing) {
+                revealProgress += dt * 0.6; const easeOut = 1 - Math.pow(1 - Math.min(1, revealProgress), 3);
+                app.scene.exposure = pc.math.lerp(0.001, state.scene.exposure, easeOut);
+                if (revealProgress >= 1) { isRevealing = false; app.scene.exposure = state.scene.exposure; }
+            }
+            state.annotations.forEach(ann => {
+                if(!ann.entity || !ann.labelEl) return;
+                const pos = ann.entity.getPosition(); const screenPos = new pc.Vec3(); camera.camera.worldToScreen(pos, screenPos);
+                if (new pc.Vec3().sub2(pos, camera.getPosition()).dot(camera.forward) < 0) { ann.labelEl.style.display = 'none'; } 
+                else {
+                    const dist = Math.sqrt(Math.pow(screenPos.x - mouseX, 2) + Math.pow(screenPos.y - mouseY, 2));
+                    if (dist < (30 + ((ann.size || 0.3) * 20))) { ann.labelEl.style.display = 'block'; ann.labelEl.style.left = screenPos.x + 'px'; ann.labelEl.style.top = screenPos.y + 'px'; } 
+                    else { ann.labelEl.style.display = 'none'; }
+                }
+            });
+        });
+        app.start();
+    </script>
+</body>
+</html>
