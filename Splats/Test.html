@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <title>Spark_Splat_Base_23 — Forced Progress</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root{--bg:#0b0d10;--panel:#0f1113;--accent:#1e90ff;--success:#00e676}
+    html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#eaeaea}
+    #app{position:fixed;inset:0;overflow:hidden}
+    canvas{display:block;width:100%;height:100%}
+
+    /* Loading Bar */
+    #loader{
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      padding:16px 32px;background:rgba(10,12,14,0.9);border-radius:12px;
+      display:none;flex-direction:column;align-items:center;gap:12px;z-index:100;
+      backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .spinner {
+      width:32px;height:32px;
+      border:4px solid rgba(255,255,255,0.1);
+      border-left-color:var(--success); /* Green color */
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+    }
+    #loaderText{font-weight:500; font-size:14px; color:#fff;}
+    #loaderPercent{font-size:12px; color:#888; font-family:monospace;}
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+    /* Left control panel */
+    #panel{
+      display: none; /* Hidden by default */
+      position:absolute;left:12px;top:12px;width:420px;max-height:90vh;overflow:auto;
+      padding:12px;background:rgba(10,12,14,.92);border-radius:12px;
+      box-shadow:0 12px 40px rgba(0,0,0,.6);font-size:13px; 
+      scrollbar-width: thin; scrollbar-color: #333 transparent;
+      z-index: 10;
+    }
+    #panel::-webkit-scrollbar {width: 6px;}
+    #panel::-webkit-scrollbar-thumb {background-color: #333; border-radius: 3px;}
+
+    /* Toggle Hint */
+    #uiHint {
+      position: fixed; top: 12px; left: 12px; 
+      padding: 8px 12px; background: rgba(0,0,0,0.5); 
+      border-radius: 8px; font-size: 12px; color: #aaa; 
+      pointer-events: none; z-index: 5; transition: opacity 0.5s;
+    }
+    
+    h3{margin:0 0 8px 0}
+    .row{display:flex;gap:8px;align-items:center;margin:8px 0}
+    .row label{flex:1 0 140px}
+    input[type=range]{flex:1}
+    input[type=number], input[type=text], select{width:94px;background:#0f1113;border:1px solid #222;color:#eaeaea;padding:6px;border-radius:6px}
+    input[type=text]{width: 100%;}
+    input[type=file]{font-size: 12px; color: #aaa;}
+    .smallnum{width:64px}
+    .btn{padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:transparent;color:inherit;cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+    .btn.success{background:#28a745;border-color:transparent;color:#fff}
+    .reset{padding:4px 6px;font-size:12px}
+    .section-title{font-weight:600;margin-top:12px;margin-bottom:6px;color: #fff; border-bottom: 1px solid #ffffff10; padding-bottom: 4px;}
+    #poiList{width:100%;height:88px}
+    #camInfo{position:absolute;right:12px;bottom:12px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.45);color:#eaeaea;font-size:12px;display:none; z-index: 10;}
+
+    /* Annotation overlay area */
+    #annotationLayer{position:absolute;inset:0;pointer-events:none; z-index: 5;}
+    .annotation{position:absolute;transform:translate(-50%,-100%);pointer-events:auto}
+    .callout-circle{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+    .callout-line{width:2px;height:40px;background:var(--accent);margin:4px auto}
+    .callout-box{background:rgba(255,255,255,0.95);color:#111;padding:8px;border-radius:8px;box-shadow:0 6px 22px rgba(0,0,0,.5);width:220px}
+    .callout-box img{width:100%;height:90px;object-fit:cover;border-radius:6px;margin-bottom:6px}
+    .callout-box .title{font-weight:700;margin-bottom:6px}
+    .callout-box .desc{font-size:13px;color:#222}
+
+    .loader-section {background: #1a1d21; padding: 10px; border-radius: 8px; margin-bottom: 12px;}
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.178.0/three.module.js",
+      "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="c"></canvas>
+
+    <!-- Loading Bar -->
+    <div id="loader" style="display: none;">
+      <div class="spinner"></div>
+      <div id="loaderText">Loading Model...</div>
+      <div id="loaderPercent">100%</div>
+    </div>
+
+    <!-- UI Hint -->
+    
+
+    
+
+    <div id="camInfo"><div id="camPos"></div><div id="camTarget"></div></div>
+    <div id="annotationLayer"></div>
+  </div>
+
+  <script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/controls/OrbitControls.js';
+  import { CSS2DRenderer } from 'https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/renderers/CSS2DRenderer.js';
+  import { SplatMesh } from '@sparkjsdev/spark';
+
+  // --- CONFIGURATION BLOCK START ---
+  // This object is the source of truth for the export.
+  const viewerConfig = {
+  "modelUrl": "Room_1403_772KS_UHD_90ks.spz",
+  "splat": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      3.141592653589793
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "opacity": 1,
+    "splatSize": 1
+  },
+  "camera": {
+    "position": [
+      6.148807305938465,
+      9.425634823089016,
+      -11.707635072836432
+    ],
+    "target": [
+      8.759176774871165,
+      7.212668416457573,
+      -2.3114256818754075
+    ],
+    "focal": 14
+  },
+  "constraints": {
+    "minDist": 5,
+    "maxDist": 10,
+    "minPolar": 75,
+    "maxPolar": 90,
+    "minAz": -18000,
+    "maxAz": 18000,
+    "rotateSpeed": 1,
+    "panSpeed": 1,
+    "zoomSpeed": 1
+  },
+  "locks": {
+    "poi": true,
+    "v": false,
+    "h": false,
+    "d": false
+  },
+  "pois": [],
+  "showAnnotations": true
+};
+  
+  // Default Size for calculation (will be replaced on export)
+  const EXPECTED_FILE_SIZE = 22 * 1024 * 1024;
+  // --- CONFIGURATION BLOCK END ---
+
+  // DOM refs
+  const canvas = document.getElementById('c');
+  const statusEl = document.getElementById('status');
+  const camInfo = document.getElementById('camInfo');
+  const camPosEl = document.getElementById('camPos');
+  const camTargetEl = document.getElementById('camTarget');
+  const annotationLayer = document.getElementById('annotationLayer');
+  const panel = document.getElementById('panel');
+  const uiHint = document.getElementById('uiHint');
+  const loader = document.getElementById('loader');
+  const loaderText = document.getElementById('loaderText');
+  const loaderPercent = document.getElementById('loaderPercent');
+  
+  // UI Helpers that don't crash if UI is missing
+  const get = id => document.getElementById(id);
+  // Helper to safely add listeners only if element exists
+  const on = (el, type, fn) => { if(el) el.addEventListener(type, fn); };
+  // Helper to set values only if element exists
+  const setVal = (el, val) => { if(el) el.value = val; };
+  const setCheck = (el, val) => { if(el) el.checked = val; };
+
+  // UI Elements Reference (May be null in exported file)
+  const ui = {
+    modelUrl: get('modelUrl'), fileSizeMB: get('fileSizeMB'), // ADDED reference
+    loadUrlBtn: get('loadUrlBtn'), localFile: get('localFile'), exportHtmlBtn: get('exportHtmlBtn'),
+    rotX: get('rotX'), rotXn: get('rotXn'), rotY: get('rotY'), rotYn: get('rotYn'), rotZ: get('rotZ'), rotZn: get('rotZn'),
+    posX: get('posX'), posXn: get('posXn'), posY: get('posY'), posYn: get('posYn'), posZ: get('posZ'), posZn: get('posZn'),
+    scale: get('scale'), scalen: get('scalen'), splatSize: get('splatSize'), splatSizen: get('splatSizen'), opacity: get('opacity'), opacityn: get('opacityn'),
+    focal: get('focal'), minDist: get('minDist'), maxDist: get('maxDist'), minPolar: get('minPolar'), maxPolar: get('maxPolar'), minAz: get('minAz'), maxAz: get('maxAz'),
+    rotSpeed: get('rotSpeed'), rotSpeedn: get('rotSpeedn'), panSpeed: get('panSpeed'), panSpeedn: get('panSpeedn'), zoomSpeed: get('zoomSpeed'), zoomSpeedn: get('zoomSpeedn'),
+    applyCam: get('applyCam'), resetCam: get('resetCam'), logCam: get('logCam'),
+    lockPOI: get('lockPOI'), lockV: get('lockV'), lockH: get('lockH'), lockD: get('lockD'),
+    poiX: get('poiX'), poiY: get('poiY'), poiZ: get('poiZ'), goToManualPoi: get('goToManualPoi'), setPoiFromCamera: get('setPoiFromCamera'),
+    poiName: get('poiName'), savePoi: get('savePoi'), removePoi: get('removePoi'), poiImg: get('poiImg'), poiDesc: get('poiDesc'), poiList: get('poiList'), gotoPoi: get('gotoPoi'), playSequence: get('playSequence'), clearPois: get('clearPois'), showAnnotations: get('showAnnotations')
+  };
+
+  // Three setup
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setSize(innerWidth, innerHeight);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b0d10);
+
+  const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.01, 5000);
+  camera.position.set(...viewerConfig.camera.position);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.06;
+  controls.target.set(...viewerConfig.camera.target);
+
+  const labelRenderer = new CSS2DRenderer(); 
+  labelRenderer.setSize(innerWidth, innerHeight); 
+  labelRenderer.domElement.style.position = 'absolute'; 
+  labelRenderer.domElement.style.top = '0'; 
+  labelRenderer.domElement.style.pointerEvents = 'none'; 
+  document.body.appendChild(labelRenderer.domElement);
+
+  // State
+  let splats = null; 
+  let loadedFile = null; 
+  const savedState = { rotate:true, pan:true, zoom:true, minPolar:controls.minPolarAngle, maxPolar:controls.maxPolarAngle, minAz:controls.minAzimuthAngle, maxAz:controls.maxAzimuthAngle };
+
+  // ---------------- Core Logic (Config -> Scene) ----------------
+  function applyConfigToScene() {
+    const c = viewerConfig.constraints;
+    controls.minDistance = c.minDist; controls.maxDistance = c.maxDist;
+    controls.minPolarAngle = THREE.MathUtils.degToRad(c.minPolar);
+    controls.maxPolarAngle = THREE.MathUtils.degToRad(c.maxPolar);
+    controls.minAzimuthAngle = THREE.MathUtils.degToRad(c.minAz);
+    controls.maxAzimuthAngle = THREE.MathUtils.degToRad(c.maxAz);
+    controls.rotateSpeed = c.rotateSpeed; controls.panSpeed = c.panSpeed; controls.zoomSpeed = c.zoomSpeed;
+    camera.setFocalLength(viewerConfig.camera.focal);
+    
+    const l = viewerConfig.locks;
+    controls.enablePan = !l.poi;
+    
+    if(splats) {
+      const s = viewerConfig.splat;
+      splats.position.set(...s.position);
+      splats.rotation.set(...s.rotation);
+      splats.scale.set(s.scale[0]*s.splatSize, s.scale[1]*s.splatSize, s.scale[2]*s.splatSize);
+      if(typeof splats.opacity==='number') splats.opacity = s.opacity;
+      else if(splats.material) { splats.material.transparent=true; splats.material.opacity=s.opacity; splats.material.needsUpdate=true; }
+      if(splats.updateGenerator) splats.updateGenerator();
+    }
+    
+    camera.updateProjectionMatrix();
+    controls.update();
+  }
+
+  // ---------------- UI Sync (Config -> UI) ----------------
+  function syncUIToConfig() {
+    if(!ui.rotX) return; // UI doesn't exist (Exported mode)
+    
+    setVal(ui.modelUrl, viewerConfig.modelUrl);
+    
+    const s = viewerConfig.splat;
+    const rDeg = s.rotation.map(r=>THREE.MathUtils.radToDeg(r));
+    setVal(ui.rotX, rDeg[0]); setVal(ui.rotXn, rDeg[0]);
+    setVal(ui.rotY, rDeg[1]); setVal(ui.rotYn, rDeg[1]);
+    setVal(ui.rotZ, rDeg[2]); setVal(ui.rotZn, rDeg[2]);
+    setVal(ui.posX, s.position[0]); setVal(ui.posXn, s.position[0]);
+    setVal(ui.posY, s.position[1]); setVal(ui.posYn, s.position[1]);
+    setVal(ui.posZ, s.position[2]); setVal(ui.posZn, s.position[2]);
+    setVal(ui.scale, s.scale[0]); setVal(ui.scalen, s.scale[0]);
+    setVal(ui.splatSize, s.splatSize); setVal(ui.splatSizen, s.splatSize);
+    setVal(ui.opacity, s.opacity); setVal(ui.opacityn, s.opacity);
+
+    const c = viewerConfig.constraints;
+    setVal(ui.minDist, c.minDist); setVal(ui.maxDist, c.maxDist);
+    setVal(ui.minPolar, c.minPolar); setVal(ui.maxPolar, c.maxPolar);
+    setVal(ui.minAz, c.minAz); setVal(ui.maxAz, c.maxAz);
+    setVal(ui.rotSpeed, c.rotateSpeed); setVal(ui.rotSpeedn, c.rotateSpeed);
+    setVal(ui.panSpeed, c.panSpeed); setVal(ui.panSpeedn, c.panSpeed);
+    setVal(ui.zoomSpeed, c.zoomSpeed); setVal(ui.zoomSpeedn, c.zoomSpeed);
+    setVal(ui.focal, viewerConfig.camera.focal);
+
+    const l = viewerConfig.locks;
+    setCheck(ui.lockPOI, l.poi); setCheck(ui.lockV, l.v); setCheck(ui.lockH, l.h); setCheck(ui.lockD, l.d);
+    
+    setCheck(ui.showAnnotations, viewerConfig.showAnnotations);
+    refreshPOIList();
+  }
+
+  // ---------------- Helpers (From Working File) ----------------
+  function setCameraTargetVec(vec3){ controls.target.copy(vec3); controls.update(); }
+  function setCameraDistance(distance){ const dir = camera.position.clone().sub(controls.target).normalize(); camera.position.copy(controls.target.clone().add(dir.multiplyScalar(distance))); controls.update(); }
+
+  // ---------------- Frame Model (From Working File) ----------------
+  function frameModel(center){ 
+    if(!splats) return; 
+    const bb = splats.getBoundingBox(false); 
+    const sphere = bb.getBoundingSphere(new THREE.Sphere()); 
+    const targ = center || sphere.center.clone(); 
+    setCameraTargetVec(targ); 
+    setCameraDistance(Math.max(0.0001, sphere.radius * 2.5)); 
+  }
+
+  // ---------------- SINGLE FILE LOADING LOGIC ----------------
+  async function loadModel(urlOrFile, useConfig = false){
+    try {
+      if(statusEl) statusEl.textContent='Status: Initializing...';
+      if(splats){ scene.remove(splats); splats.dispose?.(); splats=null; }
+
+      let src;
+      // Handle File object or string
+      if(urlOrFile instanceof File) {
+         src = URL.createObjectURL(urlOrFile);
+         loadedFile = urlOrFile; 
+         // Clear text input if file selected to avoid confusion during export
+         if(ui.modelUrl) ui.modelUrl.value = "";
+      } else if (typeof urlOrFile === 'string' && urlOrFile.trim() !== "") {
+         src = urlOrFile.trim();
+      } else {
+         if(statusEl) statusEl.textContent = 'Error: No source provided.';
+         return; 
+      }
+
+      // Show loader
+      if(loaderText) loaderText.textContent = "Loading Model...";
+      if(loader) loader.style.display = 'flex';
+      
+      splats = new SplatMesh({ url: src }, undefined, (e) => {
+          // Progress Callback
+          let percent = 0;
+          if (e.lengthComputable && e.total > 0) {
+              percent = (e.loaded / e.total) * 100;
+          } else {
+              // Fallback to configured size (ui.fileSizeMB in Editor, or EXPECTED_FILE_SIZE in Export)
+              // In Editor mode, ui.fileSizeMB exists. In Export mode, it doesn't, but EXPECTED_FILE_SIZE is updated by export logic.
+              
+              let total = EXPECTED_FILE_SIZE;
+              // Override if in Editor UI
+              if(ui.fileSizeMB && ui.fileSizeMB.value) {
+                  total = parseFloat(ui.fileSizeMB.value) * 1024 * 1024;
+              }
+              
+              if(total > 0) {
+                  percent = (e.loaded / total) * 100;
+                  if(percent > 99) percent = 99; // Cap
+              }
+          }
+          if(loaderPercent) loaderPercent.textContent = Math.round(percent) + '%';
+      });
+      // Force disable frustum culling to prevent visibility issues if bounding box is initially incorrect
+      splats.frustumCulled = false;
+      scene.add(splats);
+      
+      await splats.initialized;
+      
+      // Wait a bit to ensure geometry is fully ready for bounding box calculation
+      await new Promise(r => setTimeout(r, 100));
+      
+      if(loaderPercent) loaderPercent.textContent = "100%";
+      
+      // Setup initial view
+      if(useConfig) applyConfigToScene();
+      else { resetTransformUI(); frameModel(); }
+      
+      if(statusEl) statusEl.textContent='Status: Model Loaded.';
+      
+      if(splats.maxSh) splats.maxSh = 3;
+      if(splats.updateGenerator) splats.updateGenerator();
+
+    } catch(err) {
+      console.error("Load Failed:", err);
+      if(statusEl) statusEl.textContent='Status: Error loading. Check console.';
+      
+      // Exported File: Alert user if local loading fails (likely CORS)
+      if(!ui.modelUrl && typeof src === 'string') {
+         alert("Error Loading Model!\n\nIf you are running this file locally (double-clicking from desktop), modern browsers block loading external .ply files for security (CORS).\n\nSolution:\n1. Upload this HTML and your .ply to a web server (like GitHub Pages).\n2. OR use a local server (e.g., VS Code Live Server).");
+      }
+
+    } finally {
+      // Hide Loader
+      if(loader) loader.style.display = 'none';
+    }
+  }
+
+  // ---------------- UI Toggle ----------------
+  let uiVisible = false; 
+  function toggleUI() {
+    if(!panel) return;
+    uiVisible = !uiVisible;
+    panel.style.display = uiVisible ? 'block' : 'none';
+    if(uiHint) uiHint.style.opacity = uiVisible ? '0' : '1';
+  }
+  window.addEventListener('keydown', (e) => {
+    if(e.key === 'u' || e.key === 'U') toggleUI();
+  });
+  // Ensure init state matches variable
+  if(panel) panel.style.display = 'none';
+
+  // ---------------- Live Updates ----------------
+  function updateFromUI() {
+    if(!ui.rotX) return;
+    viewerConfig.splat.rotation = [THREE.MathUtils.degToRad(parseFloat(ui.rotX.value)||0), THREE.MathUtils.degToRad(parseFloat(ui.rotY.value)||0), THREE.MathUtils.degToRad(parseFloat(ui.rotZ.value)||0)];
+    viewerConfig.splat.position = [parseFloat(ui.posX.value)||0, parseFloat(ui.posY.value)||0, parseFloat(ui.posZ.value)||0];
+    const base = parseFloat(ui.scale.value)||1;
+    const sz = parseFloat(ui.splatSize.value)||1;
+    viewerConfig.splat.scale = [base, base, base];
+    viewerConfig.splat.splatSize = sz;
+    viewerConfig.splat.opacity = parseFloat(ui.opacity.value);
+    
+    viewerConfig.camera.focal = parseFloat(ui.focal.value)||35;
+    viewerConfig.constraints.minDist = parseFloat(ui.minDist.value);
+    viewerConfig.constraints.maxDist = parseFloat(ui.maxDist.value);
+    viewerConfig.constraints.minPolar = parseFloat(ui.minPolar.value);
+    viewerConfig.constraints.maxPolar = parseFloat(ui.maxPolar.value);
+    viewerConfig.constraints.minAz = parseFloat(ui.minAz.value);
+    viewerConfig.constraints.maxAz = parseFloat(ui.maxAz.value);
+    viewerConfig.constraints.rotateSpeed = parseFloat(ui.rotSpeed.value);
+    viewerConfig.constraints.panSpeed = parseFloat(ui.panSpeed.value);
+    viewerConfig.constraints.zoomSpeed = parseFloat(ui.zoomSpeed.value);
+    
+    viewerConfig.locks.poi = ui.lockPOI.checked;
+    viewerConfig.locks.v = ui.lockV.checked;
+    viewerConfig.locks.h = ui.lockH.checked;
+    viewerConfig.locks.d = ui.lockD.checked;
+    viewerConfig.showAnnotations = ui.showAnnotations.checked;
+
+    applyConfigToScene();
+    updateLocks();
+  }
+
+  function resetTransformUI() {
+    if(!ui.rotX) return;
+    ui.posX.value=ui.posXn.value=0; ui.posY.value=ui.posYn.value=0; ui.posZ.value=ui.posZn.value=0;
+    ui.rotX.value=ui.rotXn.value=0; ui.rotY.value=ui.rotYn.value=0; ui.rotZ.value=ui.rotZn.value=0;
+    ui.scale.value=ui.scalen.value=1; ui.splatSize.value=ui.splatSizen.value=1; ui.opacity.value=ui.opacityn.value=1;
+    updateFromUI();
+  }
+
+  function updateLocks(){ 
+    if(viewerConfig.locks.v){ const cur = controls.getPolarAngle?controls.getPolarAngle():savedState.minPolar; controls.minPolarAngle = controls.maxPolarAngle = cur; } 
+    else { controls.minPolarAngle = THREE.MathUtils.degToRad(viewerConfig.constraints.minPolar); controls.maxPolarAngle = THREE.MathUtils.degToRad(viewerConfig.constraints.maxPolar); } 
+    if(viewerConfig.locks.h){ const curAz = controls.getAzimuthalAngle?controls.getAzimuthalAngle():0; controls.minAzimuthAngle = curAz; controls.maxAzimuthAngle = curAz; } 
+    else { controls.minAzimuthAngle = THREE.MathUtils.degToRad(viewerConfig.constraints.minAz); controls.maxAzimuthAngle = THREE.MathUtils.degToRad(viewerConfig.constraints.maxAz); } 
+    if(viewerConfig.locks.d){ savedState.zoom = controls.enableZoom; controls.enableZoom=false; } 
+    else { controls.enableZoom = true; } 
+  }
+
+  // ---------------- Listeners ----------------
+  function bindPair(rangeEl, numEl){ 
+    on(rangeEl, 'input', ()=>{ if(numEl) numEl.value = rangeEl.value; updateFromUI(); }); 
+    on(numEl, 'change', ()=>{ if(rangeEl) rangeEl.value = numEl.value; updateFromUI(); }); 
+  }
+  
+  // Bind all inputs
+  bindPair(ui.rotX, ui.rotXn); bindPair(ui.rotY, ui.rotYn); bindPair(ui.rotZ, ui.rotZn);
+  bindPair(ui.posX, ui.posXn); bindPair(ui.posY, ui.posYn); bindPair(ui.posZ, ui.posZn);
+  bindPair(ui.scale, ui.scalen); bindPair(ui.splatSize, ui.splatSizen); bindPair(ui.opacity, ui.opacityn);
+  bindPair(ui.rotSpeed, ui.rotSpeedn); bindPair(ui.panSpeed, ui.panSpeedn); bindPair(ui.zoomSpeed, ui.zoomSpeedn);
+
+  on(ui.focal,'change',updateFromUI); on(ui.minDist,'change',updateFromUI); on(ui.maxDist,'change',updateFromUI);
+  on(ui.minPolar,'change',updateFromUI); on(ui.maxPolar,'change',updateFromUI); on(ui.minAz,'change',updateFromUI); on(ui.maxAz,'change',updateFromUI);
+  on(ui.lockPOI,'change',updateFromUI); on(ui.lockV,'change',updateFromUI); on(ui.lockH,'change',updateFromUI); on(ui.lockD,'change',updateFromUI);
+  on(ui.showAnnotations,'change', updateFromUI);
+
+  on(ui.loadUrlBtn, 'click', () => { const val = ui.modelUrl.value.trim(); if(val) loadModel(val); });
+  on(ui.localFile, 'change', (e) => { if(e.target.files && e.target.files[0]) loadModel(e.target.files[0]); });
+  on(ui.applyCam, 'click', ()=> { updateFromUI(); }); 
+  on(ui.resetCam, 'click', ()=> { frameModel(); }); 
+  
+  function logCameraInfo(showOverlay=true){ console.log('Camera Position:',camera.position); console.log('Camera Target:',controls.target); if(showOverlay && camInfo){ camInfo.style.display='block'; if(camPosEl) camPosEl.textContent = `Cam: ${camera.position.x.toFixed(3)}, ${camera.position.y.toFixed(3)}, ${camera.position.z.toFixed(3)}`; if(camTargetEl) camTargetEl.textContent = `POI: ${controls.target.x.toFixed(3)}, ${controls.target.y.toFixed(3)}, ${controls.target.z.toFixed(3)}`; setTimeout(()=>camInfo.style.display='none',3500); } }
+  on(ui.logCam, 'click',()=>{ logCameraInfo(true); });
+
+  // ---------------- Export Logic (Fixed) ----------------
+  on(ui.exportHtmlBtn, 'click', () => {
+    // 1. Snapshot Config
+    updateFromUI(); // Ensure config is fresh
+    viewerConfig.camera.position = [camera.position.x, camera.position.y, camera.position.z];
+    viewerConfig.camera.target = [controls.target.x, controls.target.y, controls.target.z];
+    viewerConfig.pois = loadPOIs();
+    
+    // Check Path
+    const textUrl = ui.modelUrl.value.trim();
+    if(textUrl) {
+        viewerConfig.modelUrl = textUrl;
+    } else if(currentModelUrl) {
+        viewerConfig.modelUrl = currentModelUrl;
+    } else {
+        alert("Warning: No Model URL defined. Export might be empty.");
+    }
+
+    // 2. Clone DOM for Safe Manipulation
+    const cloneDoc = document.documentElement.cloneNode(true);
+    
+    // 3. Remove UI Elements from Clone
+    const clonePanel = cloneDoc.querySelector('#panel');
+    if(clonePanel) clonePanel.remove();
+    
+    const cloneHint = cloneDoc.querySelector('#uiHint');
+    if(cloneHint) cloneHint.remove();
+
+    // 4. CLEAN UP RUNTIME ARTIFACTS
+    // Remove the canvas attributes (width, height, style) so it resets on load
+    const cloneCanvas = cloneDoc.querySelector('canvas');
+    if(cloneCanvas) {
+        cloneCanvas.removeAttribute('width');
+        cloneCanvas.removeAttribute('height');
+        cloneCanvas.removeAttribute('style');
+        cloneCanvas.removeAttribute('data-engine');
+    }
+    
+    // Remove extra divs (LabelRenderer, etc) attached to body
+    // We only want #app
+    const cloneBody = cloneDoc.querySelector('body');
+    // Remove direct children that are simple divs without IDs (likely labelRenderer)
+    Array.from(cloneBody.children).forEach(child => {
+        if(child.tagName === 'DIV' && !child.id && child.style.position === 'absolute') {
+            child.remove();
+        }
+    });
+    
+    // Empty annotation layer (it will be repopulated by script)
+    const cloneAnno = cloneDoc.querySelector('#annotationLayer');
+    if(cloneAnno) cloneAnno.innerHTML = '';
+
+    // 5. Update the Config Script in the Clone
+    const scripts = cloneDoc.querySelectorAll('script');
+    scripts.forEach(s => {
+        if(s.textContent.includes('const viewerConfig = {')) {
+            // Update ViewerConfig
+            const configRegex = /const viewerConfig = \{[\s\S]*?\};/;
+            const newConfigStr = `const viewerConfig = ${JSON.stringify(viewerConfig, null, 2)};`;
+            s.textContent = s.textContent.replace(configRegex, newConfigStr);
+            
+            // Update EXPECTED_FILE_SIZE constant in export
+            const sizeVal = parseFloat(ui.fileSizeMB.value) || 22;
+            const sizeRegex = /const EXPECTED_FILE_SIZE = .*?;/;
+            const newSizeStr = `const EXPECTED_FILE_SIZE = ${sizeVal} * 1024 * 1024;`;
+            s.textContent = s.textContent.replace(sizeRegex, newSizeStr);
+        }
+    });
+
+    // 6. Generate HTML String
+    const finalHtml = '<!doctype html>\n' + cloneDoc.outerHTML;
+
+    // 7. Download
+    const blob = new Blob([finalHtml], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'spark_viewer_clean.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // POI & Anno Logic
+  const POI_KEY = 'spark_splat_base_03_pois_v1';
+  function loadPOIs(){ try{ const raw = localStorage.getItem(POI_KEY); return raw?JSON.parse(raw):[]; }catch(e){return[];} }
+  function savePOIs(list){ localStorage.setItem(POI_KEY, JSON.stringify(list)); }
+  function refreshPOIList(){ if(!ui.poiList) return; const list = loadPOIs(); ui.poiList.innerHTML=''; list.forEach((p,idx)=>{ const opt = document.createElement('option'); opt.value=idx; opt.textContent = p.name; ui.poiList.appendChild(opt); }); }
+  function captureCurrentPOI(name, img, desc){ if(!splats) return null; return { name: name||`POI`, cameraPos: [camera.position.x,camera.position.y,camera.position.z], cameraTarget: [controls.target.x,controls.target.y,controls.target.z], focal: parseFloat(ui.focal.value)||35, constraints: viewerConfig.constraints, splatTransform: viewerConfig.splat, splatSize: viewerConfig.splat.splatSize, opacity: viewerConfig.splat.opacity, annotation:{ img: img||'', text: desc||'' } } }
+  function makeAnnotationElement(poi){ const wrap = document.createElement('div'); wrap.className = 'annotation'; wrap.style.display='none'; wrap.innerHTML = `<div class="callout-circle"></div><div class="callout-line"></div><div class="callout-box"><img src="${poi.annotation.img||''}" onerror="this.style.display='none'"/><div class="title">${poi.name}</div><div class="desc">${poi.annotation.text||''}</div></div>`; annotationLayer.appendChild(wrap); return wrap; }
+  function updateAnnotationVisibilityAndPosition(poi, el){ if(!el) return; if(!viewerConfig.showAnnotations){ el.style.display='none'; return; } const vec = new THREE.Vector3(...poi.cameraTarget).project(camera); const x = (vec.x * 0.5 + 0.5) * window.innerWidth; const y = (-vec.y * 0.5 + 0.5) * window.innerHeight; el.style.left = `${x}px`; el.style.top = `${y}px`; const camDist = camera.position.distanceTo(new THREE.Vector3(...poi.cameraPos)); el.style.display = (camDist < Math.max(1, Math.max(poi.constraints.maxDist, 5))) ? 'block' : 'none'; }
+  function tweenToPOI(poi, duration=1200){ if(!poi) return; const startCamPos = camera.position.clone(); const startTarget = controls.target.clone(); const startFocal = camera.getFocalLength(); const endCamPos = new THREE.Vector3(...poi.cameraPos); const endTarget = new THREE.Vector3(...poi.cameraTarget); const endFocal = poi.focal||startFocal; 
+    // Update config to match POI
+    viewerConfig.constraints = poi.constraints;
+    if(poi.splatTransform) viewerConfig.splat = poi.splatTransform;
+    syncUIToConfig(); applyConfigToScene(); updateLocks();
+    const start = performance.now(); if(!poi._annotationEl) poi._annotationEl = makeAnnotationElement(poi); function step(now){ const t = Math.min(1,(now-start)/duration); const ease = t<0.5?4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; camera.position.lerpVectors(startCamPos,endCamPos,ease); controls.target.lerpVectors(startTarget,endTarget,ease); camera.setFocalLength(THREE.MathUtils.lerp(startFocal,endFocal,ease)); camera.updateProjectionMatrix(); controls.update(); updateAnnotationVisibilityAndPosition(poi, poi._annotationEl); if(t<1) requestAnimationFrame(step); } requestAnimationFrame(step); }
+
+  on(ui.savePoi, 'click',()=>{ const name=(ui.poiName.value||`POI`).trim(); const img=ui.poiImg.value.trim(); const desc=ui.poiDesc.value.trim(); const p = captureCurrentPOI(name,img,desc); if(!p) return; const list = loadPOIs(); list.push(p); savePOIs(list); refreshPOIList(); if(statusEl) statusEl.textContent=`Saved POI`; });
+  on(ui.clearPois, 'click',()=>{ if(confirm('Clear all?')){ savePOIs([]); refreshPOIList(); }});
+  on(ui.removePoi, 'click',()=>{ const sel = Array.from(ui.poiList.selectedOptions).map(o=>parseInt(o.value)); if(!sel.length) return; let list = loadPOIs(); list = list.filter((_,i)=>!sel.includes(i)); savePOIs(list); refreshPOIList(); });
+  on(ui.gotoPoi, 'click',()=>{ const idx = parseInt(ui.poiList.value); if(Number.isNaN(idx)) return; tweenToPOI(loadPOIs()[idx],1200); });
+  on(ui.playSequence, 'click', async ()=>{ const list = loadPOIs(); for(const p of list){ tweenToPOI(p,1200); await new Promise(r=>setTimeout(r,1500)); } });
+  
+  on(ui.goToManualPoi, 'click',()=>{ const x=parseFloat(ui.poiX.value)||0; const y=parseFloat(ui.poiY.value)||0; const z=parseFloat(ui.poiZ.value)||0; const dir = camera.position.clone().sub(controls.target).normalize(); const dist = camera.position.distanceTo(controls.target); const newCamPos = new THREE.Vector3(x,y,z).add(dir.multiplyScalar(dist)); camera.position.copy(newCamPos); controls.target.set(x,y,z); controls.update(); });
+  on(ui.setPoiFromCamera, 'click',()=>{ if(ui.poiX) { ui.poiX.value = controls.target.x.toFixed(3); ui.poiY.value = controls.target.y.toFixed(3); ui.poiZ.value = controls.target.z.toFixed(3); } });
+  
+  window._viewerHelpers = { frameModel, setCameraDistance, logCameraInfo:(show)=> { console.log(camera.position, controls.target); if(show && camInfo) { camInfo.style.display='block'; setTimeout(()=>camInfo.style.display='none',3000); } }};
+
+  function animate(){ controls.update(); renderer.render(scene,camera); labelRenderer.render(scene,camera); 
+    if(viewerConfig.showAnnotations){ const list = loadPOIs(); list.forEach((p)=>{ if(p._annotationEl === undefined) p._annotationEl = makeAnnotationElement(p); updateAnnotationVisibilityAndPosition(p, p._annotationEl); }); }
+    requestAnimationFrame(animate); }
+  window.addEventListener('resize',()=>{ renderer.setSize(innerWidth,innerHeight); camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); labelRenderer.setSize(innerWidth,innerHeight); });
+
+  // Init
+  syncUIToConfig(); // UI -> Config sync check
+  applyConfigToScene();
+  
+  if(viewerConfig.modelUrl) loadModel(viewerConfig.modelUrl, true);
+  animate();
+
+  </script>
+
+</body></html>
