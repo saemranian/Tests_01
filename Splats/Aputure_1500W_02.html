@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3DGS PlayCanvas Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+      { "imports": { "playcanvas": "https://esm.run/playcanvas" } }
+    </script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0f172a; font-family: sans-serif; }
+        #canvas-container { position: absolute; inset: 0; overflow: hidden; }
+        canvas { position: absolute; inset: 0; width: 100%; height: 100%; outline: none; touch-action: none; }
+        .loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; color: white; z-index: 100; transition: opacity 0.8s; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="mb-4 text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-300">Downloading 3DGS...</div>
+        <div class="w-64 h-2 bg-gray-700 rounded-full overflow-hidden shadow-inner">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-teal-400 w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+    
+    <div id="canvas-container">
+        <canvas id="pc-canvas"></canvas>
+    </div>
+    
+    <div id="annotations-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+    
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto bg-gray-900/80 p-2 rounded-xl backdrop-blur-sm border border-gray-700 z-20 shadow-2xl" id="views-container"></div>
+
+    <script type="module">
+        import * as pc from 'playcanvas';
+        
+        const state = {"transform":{"x":0,"y":0,"z":0,"rx":180,"ry":0,"rz":0,"scale":1},"views":[{"name":"Cam1","pitch":-9.599999999999998,"yaw":-2629.8000000000015,"distance":50,"target":{"x":1.4181255496974157,"y":14.333393609333026,"z":1.7183335601013543}},{"name":"Cam2","pitch":-10.399999999999999,"yaw":-2707.8000000000015,"distance":50,"target":{"x":1.4181255496974157,"y":14.333393609333026,"z":1.7183335601013543}},{"name":"Cam3","pitch":-19.199999999999992,"yaw":-2662.2000000000003,"distance":30,"target":{"x":1.4181255496974157,"y":14.333393609333026,"z":1.7183335601013543}},{"name":"Cam4","pitch":-4.799999999999988,"yaw":-2904.199999999999,"distance":50,"target":{"x":1.4181255496974157,"y":14.333393609333026,"z":1.7183335601013543}},{"name":"Cam5","pitch":-14.399999999999993,"yaw":-2788.199999999999,"distance":30,"target":{"x":0.9520213078733984,"y":16.134958286750198,"z":1.612922242648286}},{"name":"Cam4","pitch":-20,"yaw":-2836.6000000000013,"distance":36.300000000000004,"target":{"x":1.4181255496974157,"y":14.333393609333026,"z":1.7183335601013543}}],"annotations":[{"title":"Title 1","desc":"Description 1","x":1.4181255496974157,"y":14.333393609333026,"z":1.7183335601013543},{"title":"Title 02","desc":"Description 2","x":2.356879506572955,"y":10.120487552143326,"z":5.072428059973738}],"scene":{"toneMapping":3,"exposure":1},"cameraLimits":{"minDistance":30,"maxDistance":50,"minPitch":-30,"maxPitch":15},"exportUrl":"Aputure_1500w_3600ks_Sel01.compressed.ply_02"};
+        let isRevealing = false;
+        let revealProgress = 0;
+        let mouseX = -1000, mouseY = -1000;
+        
+        const canvas = document.getElementById('pc-canvas');
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+        window.addEventListener('mousemove', e => { 
+            const coords = getCanvasCoords(e);
+            mouseX = coords.x; mouseY = coords.y; 
+        });
+        
+        const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
+        app.setCanvasFillMode(pc.FILLMODE_NONE);
+        app.setCanvasResolution(pc.RESOLUTION_AUTO);
+        
+        const resizeObs = new ResizeObserver(entries => { app.resizeCanvas(entries[0].contentRect.width, entries[0].contentRect.height); });
+        resizeObs.observe(document.getElementById('canvas-container'));
+        
+        app.scene.gammaCorrection = pc.GAMMA_SRGB;
+        app.scene.toneMapping = state.scene.toneMapping;
+        app.scene.exposure = 0.001; // Start dark for reveal
+
+        const camera = new pc.Entity('Camera');
+        camera.addComponent('camera', { clearColor: new pc.Color(0.05, 0.05, 0.08) });
+        app.root.addChild(camera);
+
+        const annMaterial = new pc.StandardMaterial();
+        annMaterial.diffuse = new pc.Color(0.7, 0.2, 0.9);
+        annMaterial.emissive = new pc.Color(0.2, 0.0, 0.4);
+        annMaterial.update();
+
+        const orbit = {
+            pitch: 20, yaw: 45, distance: 5, target: new pc.Vec3(0,0,0),
+            current: { pitch: 20, yaw: 45, distance: 5, target: new pc.Vec3(0,0,0) },
+            update(dt) {
+                this.distance = Math.max(state.cameraLimits.minDistance, Math.min(state.cameraLimits.maxDistance, this.distance));
+                this.pitch = Math.max(state.cameraLimits.minPitch, Math.min(state.cameraLimits.maxPitch, this.pitch));
+                
+                const speed = Math.min(1.0, 8.0 * dt);
+                this.current.pitch = pc.math.lerp(this.current.pitch, this.pitch, speed);
+                this.current.yaw = pc.math.lerp(this.current.yaw, this.yaw, speed);
+                this.current.distance = pc.math.lerp(this.current.distance, this.distance, speed);
+                this.current.target.lerp(this.current.target, this.target, speed);
+
+                const q = new pc.Quat().setFromEulerAngles(this.current.pitch, this.current.yaw, 0);
+                const dir = new pc.Vec3(0, 0, 1);
+                q.transformVector(dir, dir);
+                dir.mulScalar(this.current.distance);
+                
+                const pos = this.current.target.clone().add(dir);
+                camera.setPosition(pos);
+                camera.lookAt(this.current.target);
+            }
+        };
+
+        let splatEntity = null;
+
+        // Custom XHR Load with Progress Bar
+        const req = new XMLHttpRequest();
+        req.open('GET', state.exportUrl, true);
+        req.responseType = 'blob';
+        req.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const pct = (e.loaded / e.total) * 100;
+                document.getElementById('progress-bar').style.width = pct + '%';
+            }
+        };
+        req.onload = () => {
+            if (req.status === 200) {
+                const blobUrl = URL.createObjectURL(req.response);
+                app.assets.loadFromUrl(blobUrl, 'gsplat', function (err, asset) {
+                    const loaderEl = document.getElementById('loading');
+                    if (err) { loaderEl.innerHTML = "Error loading 3DGS!"; return; }
+                    
+                    splatEntity = new pc.Entity();
+                    splatEntity.addComponent('gsplat', { asset: asset });
+                    splatEntity.setLocalPosition(state.transform.x, state.transform.y, state.transform.z);
+                    splatEntity.setLocalEulerAngles(state.transform.rx, state.transform.ry, state.transform.rz);
+                    splatEntity.setLocalScale(state.transform.scale, state.transform.scale, state.transform.scale);
+                    app.root.addChild(splatEntity);
+                    
+                    loaderEl.style.opacity = '0';
+                    isRevealing = true;
+                    revealProgress = 0;
+                });
+            } else {
+                document.getElementById('loading').innerHTML = "File not found: " + state.exportUrl;
+            }
+        };
+        req.onerror = () => document.getElementById('loading').innerHTML = "Network Error loading 3DGS.";
+        req.send();
+
+        // Controls
+        let isDragging = false, lastX, lastY, btn = -1;
+        function hStart(x,y,b) { isDragging = true; btn = b; lastX = x; lastY = y; }
+        function hMove(x,y) {
+            if (!isDragging) return;
+            const dx = x - lastX, dy = y - lastY; lastX = x; lastY = y;
+            if (btn === 0) { orbit.yaw -= dx * 0.4; orbit.pitch -= dy * 0.4; }
+            else if (btn === 2) { const scale = orbit.distance * 0.002; orbit.target.add(camera.right.clone().mulScalar(-dx * scale)).add(camera.up.clone().mulScalar(dy * scale)); }
+        }
+        function hEnd() { isDragging = false; btn = -1; }
+
+        canvas.addEventListener('mousedown', e => hStart(e.clientX, e.clientY, e.button));
+        window.addEventListener('mouseup', hEnd);
+        window.addEventListener('mousemove', e => hMove(e.clientX, e.clientY));
+        canvas.addEventListener('wheel', e => { orbit.distance *= (1 + e.deltaY * 0.001); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        
+        canvas.addEventListener('dblclick', e => {
+            const coords = getCanvasCoords(e);
+            const from = camera.getPosition();
+            const to = camera.camera.screenToWorld(coords.x, coords.y, 1000);
+            const dir = new pc.Vec3().sub2(to, from).normalize();
+            let hitDist = orbit.distance;
+            try {
+                if (splatEntity && splatEntity.gsplat?.instance?.meshInstance?.aabb) {
+                    const aabb = splatEntity.gsplat.instance.meshInstance.aabb;
+                    const min = aabb.getMin(), max = aabb.getMax();
+                    const t1 = (min.x - from.x)/dir.x, t2 = (max.x - from.x)/dir.x;
+                    const t3 = (min.y - from.y)/dir.y, t4 = (max.y - from.y)/dir.y;
+                    const t5 = (min.z - from.z)/dir.z, t6 = (max.z - from.z)/dir.z;
+                    const tmin = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6));
+                    const tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
+                    if (tmax >= tmin && tmin >= 0) hitDist = tmin + (tmax - tmin) * 0.2;
+                }
+            } catch(err) {}
+            orbit.target.copy(from.clone().add(dir.mulScalar(hitDist)));
+        });
+
+        canvas.addEventListener('touchstart', e => { if (e.touches.length === 1) hStart(e.touches[0].clientX, e.touches[0].clientY, 0); else if (e.touches.length === 2) hStart((e.touches[0].clientX + e.touches[1].clientX)/2, (e.touches[0].clientY + e.touches[1].clientY)/2, 2); }, {passive: false});
+        canvas.addEventListener('touchend', hEnd);
+        canvas.addEventListener('touchmove', e => { e.preventDefault(); if (e.touches.length === 1 && btn === 0) hMove(e.touches[0].clientX, e.touches[0].clientY); else if (e.touches.length === 2 && btn === 2) hMove((e.touches[0].clientX + e.touches[1].clientX)/2, (e.touches[0].clientY + e.touches[1].clientY)/2); }, {passive: false});
+
+        // UI Initialization
+        const vC = document.getElementById('views-container');
+        if (state.views.length === 0) vC.style.display = 'none';
+        state.views.forEach(v => {
+            const b = document.createElement('button');
+            b.className = 'px-4 py-2 bg-gray-800 hover:bg-teal-600 text-white rounded font-medium text-sm transition-colors shadow';
+            b.innerText = v.name;
+            b.onclick = () => { orbit.pitch = v.pitch; orbit.yaw = v.yaw; orbit.distance = v.distance; orbit.target.set(v.target.x, v.target.y, v.target.z); };
+            vC.appendChild(b);
+        });
+
+        const layer = document.getElementById('annotations-layer');
+        state.annotations.forEach(ann => {
+            const annEntity = new pc.Entity();
+            annEntity.addComponent('render', { type: 'sphere', material: annMaterial });
+            annEntity.setLocalScale(0.15, 0.15, 0.15);
+            annEntity.setPosition(ann.x, ann.y, ann.z);
+            app.root.addChild(annEntity);
+            ann.entity = annEntity;
+
+            const el = document.createElement('div');
+            el.className = 'hidden absolute p-3 rounded-lg w-max max-w-[250px] bg-gray-900/95 text-white border border-gray-600 shadow-2xl z-50 transform -translate-x-1/2 -translate-y-[120%] pointer-events-none backdrop-blur-md';
+            el.innerHTML = `
+                <div class="font-bold text-base text-purple-300 mb-1">${ann.title}</div>
+                <div class="text-sm text-gray-300 whitespace-pre-wrap">${ann.desc}</div>
+                <div class="absolute w-3 h-3 bg-gray-900/95 border-b border-r border-gray-600 transform rotate-45 left-1/2 -translate-x-1/2 -bottom-[7px]"></div>`;
+            layer.appendChild(el);
+            ann.labelEl = el;
+        });
+
+        if (state.views.length > 0) {
+            const v = state.views[0];
+            orbit.pitch = v.pitch; orbit.yaw = v.yaw; orbit.distance = v.distance;
+            orbit.target.set(v.target.x, v.target.y, v.target.z);
+            orbit.current.pitch = v.pitch; orbit.current.yaw = v.yaw; 
+            orbit.current.distance = v.distance; orbit.current.target.set(v.target.x, v.target.y, v.target.z);
+        }
+
+        app.on('update', (dt) => {
+            orbit.update(dt);
+            
+            if (isRevealing) {
+                revealProgress += dt * 0.6;
+                const easeOut = 1 - Math.pow(1 - Math.min(1, revealProgress), 3);
+                app.scene.exposure = pc.math.lerp(0.001, state.scene.exposure, easeOut);
+                if (revealProgress >= 1) {
+                    isRevealing = false;
+                    app.scene.exposure = state.scene.exposure;
+                }
+            }
+
+            state.annotations.forEach(ann => {
+                if(!ann.entity || !ann.labelEl) return;
+                const pos = ann.entity.getPosition();
+                const screenPos = new pc.Vec3();
+                camera.camera.worldToScreen(pos, screenPos);
+                const dirToAnn = new pc.Vec3().sub2(pos, camera.getPosition());
+                
+                if (dirToAnn.dot(camera.forward) < 0) {
+                    ann.labelEl.style.display = 'none';
+                } else {
+                    const dist = Math.sqrt(Math.pow(screenPos.x - mouseX, 2) + Math.pow(screenPos.y - mouseY, 2));
+                    if (dist < 35) {
+                        ann.labelEl.style.display = 'block';
+                        ann.labelEl.style.left = screenPos.x + 'px';
+                        ann.labelEl.style.top = screenPos.y + 'px';
+                    } else {
+                        ann.labelEl.style.display = 'none';
+                    }
+                }
+            });
+        });
+        app.start();
+    </script>
+</body>
+</html>
