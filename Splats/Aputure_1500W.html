@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3DGS PlayCanvas Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+      { "imports": { "playcanvas": "https://esm.run/playcanvas" } }
+    </script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0f172a; font-family: sans-serif; }
+        canvas { display: block; width: 100vw; height: 100vh; outline: none; }
+        .loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #0f172a; color: white; z-index: 100; font-size: 1.5rem; transition: opacity 0.5s; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">Loading Gaussian Splat...</div>
+    <canvas id="pc-canvas"></canvas>
+    
+    <!-- UI Overlays -->
+    <div id="annotations-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+    
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto bg-gray-900/80 p-2 rounded-xl backdrop-blur-sm border border-gray-700 z-20 shadow-2xl" id="views-container">
+        <!-- Views injected here -->
+    </div>
+
+    <script type="module">
+        import * as pc from 'playcanvas';
+        
+        const state = {"transform":{"x":0,"y":0,"z":0,"rx":180,"ry":0,"rz":0,"scale":1},"views":[{"name":"Cam1","pitch":-6,"yaw":-1904.5,"distance":50,"target":{"x":-0.020092287312125492,"y":16.26258532401817,"z":-1.8803328506052932}},{"name":"Cam2","pitch":-2.5,"yaw":-2088,"distance":50,"target":{"x":-0.020092287312125492,"y":16.26258532401817,"z":-1.8803328506052932}}],"annotations":[{"title":"STORM 1500W","desc":"Aputure Light STROM XT52","x":1.1107055012010654,"y":14.841949884052482,"z":-0.9732350973243573}],"scene":{"toneMapping":3,"exposure":1},"cameraLimits":{"minDistance":30,"maxDistance":50},"exportUrl":"Aputure_1500w_3600ks_Sel01.compressed.ply"};
+        
+        // Engine Init
+        const canvas = document.getElementById('pc-canvas');
+        const app = new pc.Application(canvas, { graphicsDeviceOptions: { antialias: true, alpha: false } });
+        app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
+        app.setCanvasResolution(pc.RESOLUTION_AUTO);
+        
+        app.scene.toneMapping = state.scene.toneMapping;
+        app.scene.exposure = state.scene.exposure;
+
+        const camera = new pc.Entity('Camera');
+        camera.addComponent('camera', { clearColor: new pc.Color(0.05, 0.05, 0.08) });
+        app.root.addChild(camera);
+
+        const orbit = {
+            pitch: 20, yaw: 45, distance: 5, target: new pc.Vec3(0,0,0),
+            update() {
+                this.distance = Math.max(state.cameraLimits.minDistance, Math.min(state.cameraLimits.maxDistance, this.distance));
+                const q = new pc.Quat().setFromEulerAngles(this.pitch, this.yaw, 0);
+                const dir = new pc.Vec3(0, 0, 1);
+                q.transformVector(dir, dir);
+                dir.mulScalar(this.distance);
+                camera.setPosition(this.target.clone().add(dir));
+                camera.setRotation(q);
+            }
+        };
+
+        // Load Splat
+        app.assets.loadFromUrl(state.exportUrl, 'gsplat', function (err, asset) {
+            const loaderEl = document.getElementById('loading');
+            if (err) { loaderEl.innerText = "Error loading " + state.exportUrl; return; }
+            
+            const splat = new pc.Entity();
+            splat.addComponent('gsplat', { asset: asset });
+            
+            // Apply Transform
+            splat.setLocalPosition(state.transform.x, state.transform.y, state.transform.z);
+            splat.setLocalEulerAngles(state.transform.rx, state.transform.ry, state.transform.rz);
+            splat.setLocalScale(state.transform.scale, state.transform.scale, state.transform.scale);
+            app.root.addChild(splat);
+            
+            loaderEl.style.opacity = '0';
+        });
+
+        // Controls
+        let isDragging = false, lastX, lastY, btn = -1;
+        function hStart(x,y,b) { isDragging = true; btn = b; lastX = x; lastY = y; }
+        function hMove(x,y) {
+            if (!isDragging) return;
+            const dx = x - lastX, dy = y - lastY; lastX = x; lastY = y;
+            if (btn === 0) { orbit.yaw -= dx * 0.5; orbit.pitch = Math.max(-89, Math.min(89, orbit.pitch - dy * 0.5)); }
+            else if (btn === 2) { const scale = orbit.distance * 0.002; orbit.target.add(camera.right.clone().mulScalar(-dx * scale)).add(camera.up.clone().mulScalar(dy * scale)); }
+        }
+        function hEnd() { isDragging = false; btn = -1; }
+
+        canvas.addEventListener('mousedown', e => hStart(e.clientX, e.clientY, e.button));
+        window.addEventListener('mouseup', hEnd);
+        window.addEventListener('mousemove', e => hMove(e.clientX, e.clientY));
+        canvas.addEventListener('wheel', e => { orbit.distance *= (1 + e.deltaY * 0.001); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        
+        canvas.addEventListener('touchstart', e => { if (e.touches.length === 1) hStart(e.touches[0].clientX, e.touches[0].clientY, 0); else if (e.touches.length === 2) hStart((e.touches[0].clientX + e.touches[1].clientX)/2, (e.touches[0].clientY + e.touches[1].clientY)/2, 2); }, {passive: false});
+        canvas.addEventListener('touchend', hEnd);
+        canvas.addEventListener('touchmove', e => { e.preventDefault(); if (e.touches.length === 1 && btn === 0) hMove(e.touches[0].clientX, e.touches[0].clientY); else if (e.touches.length === 2 && btn === 2) hMove((e.touches[0].clientX + e.touches[1].clientX)/2, (e.touches[0].clientY + e.touches[1].clientY)/2); }, {passive: false});
+
+        // UI Initialization
+        const vC = document.getElementById('views-container');
+        if (state.views.length === 0) vC.style.display = 'none';
+        state.views.forEach(v => {
+            const b = document.createElement('button');
+            b.className = 'px-4 py-2 bg-gray-800 hover:bg-teal-600 text-white rounded font-medium text-sm transition-colors shadow';
+            b.innerText = v.name;
+            b.onclick = () => { orbit.pitch = v.pitch; orbit.yaw = v.yaw; orbit.distance = v.distance; orbit.target.set(v.target.x, v.target.y, v.target.z); };
+            vC.appendChild(b);
+        });
+
+        const layer = document.getElementById('annotations-layer');
+        state.annotations.forEach(ann => {
+            const el = document.createElement('div');
+            el.className = 'absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer group';
+            el.innerHTML = `
+                <div class="w-5 h-5 bg-purple-500 border-2 border-white rounded-full shadow-[0_0_15px_rgba(0,0,0,0.8)] transition-transform group-hover:scale-125"></div>
+                <div class="hidden absolute top-8 left-1/2 -translate-x-1/2 bg-gray-900/95 p-4 rounded-xl w-max max-w-[250px] text-white border border-gray-600 backdrop-blur-md z-50 shadow-2xl group-hover:block">
+                    <div class="font-bold text-base text-purple-300 mb-1">${ann.title}</div>
+                    <div class="text-sm text-gray-300 whitespace-pre-wrap">${ann.desc}</div>
+                </div>`;
+            layer.appendChild(el);
+            ann.el = el;
+        });
+
+        // Setup Initial View
+        if (state.views.length > 0) {
+            const v = state.views[0];
+            orbit.pitch = v.pitch; orbit.yaw = v.yaw; orbit.distance = v.distance;
+            orbit.target.set(v.target.x, v.target.y, v.target.z);
+        }
+
+        // Render Loop
+        app.on('update', () => {
+            orbit.update();
+            state.annotations.forEach(ann => {
+                const pos = new pc.Vec3(ann.x, ann.y, ann.z);
+                const screenPos = new pc.Vec3();
+                camera.camera.worldToScreen(pos, screenPos);
+                if (new pc.Vec3().sub2(pos, camera.getPosition()).dot(camera.forward) < 0) {
+                    ann.el.style.display = 'none';
+                } else {
+                    ann.el.style.display = 'block';
+                    ann.el.style.left = screenPos.x + 'px';
+                    ann.el.style.top = screenPos.y + 'px';
+                }
+            });
+        });
+        app.start();
+    </script>
+</body>
+</html>
